@@ -1,0 +1,148 @@
+### Cart API Examples
+### Base URL
+@baseUrl = http://localhost:3000
+@anonymousToken = {{$guid}}
+@userId = your-user-id-here
+
+### ========================================
+### ANONYMOUS USER EXAMPLES
+### ========================================
+
+### Get anonymous cart
+GET {{baseUrl}}/cart?anonymousToken={{anonymousToken}}
+
+### Add part to anonymous cart
+POST {{baseUrl}}/cart/part?anonymousToken={{anonymousToken}}
+Content-Type: application/json
+
+{
+  "partId": "part-uuid-here",
+  "quantity": 1,
+  "customizationOptions": {
+    "selectedColor": "red",
+    "selectedSize": "large"
+  }
+}
+
+### Add sticker to anonymous cart
+POST {{baseUrl}}/cart/sticker?anonymousToken={{anonymousToken}}
+Content-Type: application/json
+
+{
+  "stickerId": "sticker-uuid-here",
+  "width": 100,
+  "height": 50,
+  "vinyl": true,
+  "printed": false,
+  "quantity": 1
+}
+
+### Add powdercoat service to anonymous cart
+POST {{baseUrl}}/cart/powdercoat-service?anonymousToken={{anonymousToken}}
+Content-Type: application/json
+
+{
+  "powdercoatingServiceId": "service-uuid-here",
+  "quantity": 1,
+  "color": "Matte Black"
+}
+
+### Update part quantity in anonymous cart
+PATCH {{baseUrl}}/cart/part/amount/part-order-item-id?anonymousToken={{anonymousToken}}
+Content-Type: application/json
+
+{
+  "amount": 3
+}
+
+### Remove part from anonymous cart
+DELETE {{baseUrl}}/cart/part/part-order-item-id?anonymousToken={{anonymousToken}}
+
+### Clear anonymous cart
+DELETE {{baseUrl}}/cart/clear?anonymousToken={{anonymousToken}}
+
+### Delete anonymous cart completely
+DELETE {{baseUrl}}/cart?anonymousToken={{anonymousToken}}
+
+### ========================================
+### AUTHENTICATED USER EXAMPLES
+### ========================================
+
+### Get authenticated user's cart
+GET {{baseUrl}}/cart?userId={{userId}}
+
+### Add part to authenticated user's cart
+POST {{baseUrl}}/cart/part?userId={{userId}}
+Content-Type: application/json
+
+{
+  "partId": "part-uuid-here",
+  "quantity": 1,
+  "customizationOptions": {
+    "selectedColor": "blue",
+    "selectedSize": "medium"
+  }
+}
+
+### Add sticker to authenticated user's cart
+POST {{baseUrl}}/cart/sticker?userId={{userId}}
+Content-Type: application/json
+
+{
+  "stickerId": "sticker-uuid-here",
+  "width": 150,
+  "height": 75,
+  "vinyl": false,
+  "printed": true,
+  "quantity": 2
+}
+
+### Add powdercoat service to authenticated user's cart
+POST {{baseUrl}}/cart/powdercoat-service?userId={{userId}}
+Content-Type: application/json
+
+{
+  "powdercoatingServiceId": "service-uuid-here",
+  "quantity": 1,
+  "color": "Glossy Red"
+}
+
+### Update sticker quantity
+PATCH {{baseUrl}}/cart/sticker/amount/order-item-id?userId={{userId}}
+Content-Type: application/json
+
+{
+  "amount": 5
+}
+
+### Remove sticker from cart
+DELETE {{baseUrl}}/cart/sticker/order-item-id?userId={{userId}}
+
+### Clear authenticated user's cart
+DELETE {{baseUrl}}/cart/clear?userId={{userId}}
+
+### ========================================
+### UTILITY ENDPOINTS
+### ========================================
+
+### Get recommendations to reach 100 CHF
+POST {{baseUrl}}/cart/recommendations
+Content-Type: application/json
+
+{
+  "costAmount": 75.50,
+  "itemsIdInCart": ["item-id-1", "item-id-2"]
+}
+
+### Manual cleanup of expired anonymous carts (Admin)
+POST {{baseUrl}}/scheduler/cart-cleanup/manual
+
+### ========================================
+### NOTES
+### ========================================
+# - Replace {{anonymousToken}} with a real UUID for testing
+# - Replace {{userId}} with actual user ID
+# - Replace UUIDs in bodies with actual IDs from your database
+# - Anonymous carts expire after 72 hours
+# - All cart endpoints accept either userId OR anonymousToken
+# - Cannot use both userId and anonymousToken in same request

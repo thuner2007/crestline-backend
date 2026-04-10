@@ -1,0 +1,197 @@
+### Upload Blog Images
+POST http://localhost:3000/blog/upload-images
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+------WebKitFormBoundary--
+
+###
+
+### Create Blog Post with Multi-Language Support
+POST http://localhost:3000/blog
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+{
+  "author": "John Doe",
+  "writingDate": "2025-11-06T10:00:00.000Z",
+  "active": false,
+  "translations": [
+    {
+      "language": "en",
+      "title": "My First Blog Post",
+      "htmlContent": "<h1>Welcome to My Blog</h1><p>This is my first blog post with <strong>HTML</strong> content.</p>"
+    },
+    {
+      "language": "de",
+      "title": "Mein erster Blog-Beitrag",
+      "htmlContent": "<h1>Willkommen in meinem Blog</h1><p>Dies ist mein erster Blog-Beitrag mit <strong>HTML</strong>-Inhalt.</p>"
+    },
+    {
+      "language": "fr",
+      "title": "Mon premier article de blog",
+      "htmlContent": "<h1>Bienvenue sur mon blog</h1><p>Ceci est mon premier article de blog avec du contenu <strong>HTML</strong>.</p>"
+    },
+    {
+      "language": "it",
+      "title": "Il mio primo post del blog",
+      "htmlContent": "<h1>Benvenuti nel mio blog</h1><p>Questo è il mio primo post del blog con contenuto <strong>HTML</strong>.</p>"
+    }
+  ],
+  "images": [
+    {
+      "url": "https://your-minio-url.com/blog/image1.jpg",
+      "altText": "Blog header image"
+    }
+  ],
+  "links": [
+    {
+      "url": "https://example.com/related-article",
+      "title": "Related Article: How to Write Great Blogs"
+    }
+  ]
+}
+
+###
+
+### Get All Blog Posts (Public)
+GET http://localhost:3000/blog
+
+###
+
+### Get Only Active Blog Posts (Public)
+GET http://localhost:3000/blog?activeOnly=true
+
+###
+
+### Get All Blog Posts in German
+GET http://localhost:3000/blog?language=de
+
+###
+
+### Get Active Blog Posts in English
+GET http://localhost:3000/blog?activeOnly=true&language=en
+
+###
+
+### Get Single Blog Post (Public)
+GET http://localhost:3000/blog/YOUR_BLOG_ID
+
+###
+
+### Get Single Blog Post in French
+GET http://localhost:3000/blog/YOUR_BLOG_ID?language=fr
+
+###
+
+### Update Blog Post - Add Italian Translation
+PATCH http://localhost:3000/blog/YOUR_BLOG_ID
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+{
+  "translations": [
+    {
+      "language": "en",
+      "title": "Updated Blog Post Title",
+      "htmlContent": "<h1>Updated Content</h1><p>This content has been updated.</p>"
+    },
+    {
+      "language": "de",
+      "title": "Aktualisierter Blog-Beitrag-Titel",
+      "htmlContent": "<h1>Aktualisierter Inhalt</h1><p>Dieser Inhalt wurde aktualisiert.</p>"
+    },
+    {
+      "language": "it",
+      "title": "Titolo del post del blog aggiornato",
+      "htmlContent": "<h1>Contenuto aggiornato</h1><p>Questo contenuto è stato aggiornato.</p>"
+    }
+  ],
+  "active": true
+}
+
+###
+
+### Activate Blog Post
+PATCH http://localhost:3000/blog/YOUR_BLOG_ID/activate
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+###
+
+### Deactivate Blog Post
+PATCH http://localhost:3000/blog/YOUR_BLOG_ID/deactivate
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+###
+
+### Delete Blog Post
+DELETE http://localhost:3000/blog/YOUR_BLOG_ID
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+###
+
+### Complete Example: Create a Multi-Language Blog Post with Images and Links
+POST http://localhost:3000/blog
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+{
+  "author": "Jane Developer",
+  "writingDate": "2025-11-06T14:30:00.000Z",
+  "active": false,
+  "translations": [
+    {
+      "language": "en",
+      "title": "10 Tips for Better Coding",
+      "htmlContent": "<article><h1>10 Tips for Better Coding</h1><p>Here are my top 10 tips...</p><h2>1. Write Clean Code</h2><p>Always write clean, readable code...</p><img src='https://your-minio-url.com/blog/tip1.jpg' alt='Clean Code Example' /><h2>2. Use Version Control</h2><p>Git is your best friend...</p></article>"
+    },
+    {
+      "language": "de",
+      "title": "10 Tipps für besseres Programmieren",
+      "htmlContent": "<article><h1>10 Tipps für besseres Programmieren</h1><p>Hier sind meine Top 10 Tipps...</p><h2>1. Schreibe sauberen Code</h2><p>Schreibe immer sauberen, lesbaren Code...</p><img src='https://your-minio-url.com/blog/tip1.jpg' alt='Beispiel für sauberen Code' /><h2>2. Verwende Versionskontrolle</h2><p>Git ist dein bester Freund...</p></article>"
+    },
+    {
+      "language": "fr",
+      "title": "10 conseils pour mieux coder",
+      "htmlContent": "<article><h1>10 conseils pour mieux coder</h1><p>Voici mes 10 meilleurs conseils...</p><h2>1. Écrivez du code propre</h2><p>Écrivez toujours du code propre et lisible...</p><img src='https://your-minio-url.com/blog/tip1.jpg' alt='Exemple de code propre' /><h2>2. Utilisez le contrôle de version</h2><p>Git est votre meilleur ami...</p></article>"
+    },
+    {
+      "language": "it",
+      "title": "10 consigli per programmare meglio",
+      "htmlContent": "<article><h1>10 consigli per programmare meglio</h1><p>Ecco i miei 10 migliori consigli...</p><h2>1. Scrivi codice pulito</h2><p>Scrivi sempre codice pulito e leggibile...</p><img src='https://your-minio-url.com/blog/tip1.jpg' alt='Esempio di codice pulito' /><h2>2. Usa il controllo versione</h2><p>Git è il tuo migliore amico...</p></article>"
+    }
+  ],
+  "images": [
+    {
+      "url": "https://your-minio-url.com/blog/header.jpg",
+      "altText": "Blog header"
+    },
+    {
+      "url": "https://your-minio-url.com/blog/tip1.jpg",
+      "altText": "Clean code example"
+    },
+    {
+      "url": "https://your-minio-url.com/blog/tip2.jpg",
+      "altText": "Git workflow"
+    }
+  ],
+  "links": [
+    {
+      "url": "https://example.com/clean-code-guide",
+      "title": "The Complete Guide to Clean Code"
+    },
+    {
+      "url": "https://git-scm.com/doc",
+      "title": "Git Documentation"
+    },
+    {
+      "url": "https://example.com/best-practices",
+      "title": "Coding Best Practices 2025"
+    }
+  ]
+}

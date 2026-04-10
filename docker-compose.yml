@@ -1,0 +1,10 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg17
+    environment:
+      - POSTGRES_USER=cwx_dev
+      - POSTGRES_PASSWORD=cwx_password
+      - POSTGRES_DB=postgres
+    ports:
+      - "5455:5432"
+    restart: unless-stopped

@@ -1,0 +1,134 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+  release:
+    types:
+      - 'published'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run lint
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - run: npm run build
+      - name: Package everything needed for Docker
+        run: |
+          mkdir -p docker-context
+          cp -r dist docker-context/
+          cp package*.json docker-context/
+          cp -r prisma docker-context/
+          cp -r node_modules/.prisma docker-context/node_modules/.prisma || mkdir -p docker-context/node_modules/.prisma
+          # Copy TypeScript configuration files
+          cp tsconfig*.json docker-context/
+          # Copy Nest CLI configuration
+          cp nest-cli.json docker-context/
+          # Copy source files for Prisma to access during build
+          cp -r src docker-context/src || echo "No src directory to copy"
+
+      - name: Setup SSH
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 188.63.57.139 >> ~/.ssh/known_hosts
+
+      - name: Upload build to home server
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519" docker-context/ user@188.63.57.139:~/github-artifacts/crestline-backend-${{ github.sha }}/
+
+  docker:
+    needs: [build, lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: download artifact from server
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 188.63.57.139 >> ~/.ssh/known_hosts
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519" user@188.63.57.139:~/github-artifacts/crestline-backend-${{ github.sha }}/ docker-context/
+
+      # Copy Dockerfile to proper location if needed
+      - name: Prepare Docker build context
+        run: |
+          cp Dockerfile docker-context/ || echo "Dockerfile already in context"
+          cp .dockerignore docker-context/ || echo "No .dockerignore file"
+          cp entrypoint.sh docker-context/ || echo "No entrypoint.sh file"
+
+      # Fresh installation of npm modules and Prisma
+      - name: Install dependencies and generate Prisma client
+        working-directory: docker-context
+        run: |
+          echo "Installing dependencies and generating Prisma client in Docker context"
+          npm ci
+          echo "Running Prisma generate"
+          npx prisma generate
+          echo "Checking for node_modules/.prisma/client"
+          ls -la node_modules/.prisma/client || echo "Directory not found"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_NAMESPACE }}/${{ vars.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=raw,value=dev,enable=${{ github.ref_name == 'main' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ github.event_name == 'release' }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: docker-context
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: ${{ github.ref_name == 'main' || github.event_name == 'release' }}
+          cache-from: |
+            type=registry,ref=${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_NAMESPACE }}/${{ vars.DOCKER_IMAGE_NAME }}:buildcache
+          cache-to: |
+            type=registry,ref=${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_NAMESPACE }}/${{ vars.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+          build-args: |
+            NODE_ENV=production
+            SKIP_PRISMA_GENERATE=false
+
+      - run: docker logout

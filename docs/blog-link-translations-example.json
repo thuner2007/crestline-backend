@@ -1,0 +1,53 @@
+{
+  "author": "John Doe",
+  "writingDate": "2025-11-10",
+  "active": true,
+  "translations": [
+    {
+      "language": "de",
+      "title": "Deutscher Titel",
+      "markdownContent": "# Deutscher Inhalt\n\nMarkdown text auf Deutsch..."
+    },
+    {
+      "language": "en",
+      "title": "English Title",
+      "markdownContent": "# English Content\n\nMarkdown text in English..."
+    }
+  ],
+  "images": [
+    {
+      "url": "https://example.com/image1.jpg",
+      "altText": "Image description"
+    }
+  ],
+  "links": [
+    {
+      "translations": [
+        {
+          "language": "de",
+          "url": "https://example.com/de/produkt",
+          "title": "Zu unserem Produkt"
+        },
+        {
+          "language": "en",
+          "url": "https://example.com/en/product",
+          "title": "Visit our product"
+        }
+      ]
+    },
+    {
+      "translations": [
+        {
+          "language": "de",
+          "url": "https://example.com/de/kontakt",
+          "title": "Kontaktiere uns"
+        },
+        {
+          "language": "en",
+          "url": "https://example.com/en/contact",
+          "title": "Contact us"
+        }
+      ]
+    }
+  ]
+}

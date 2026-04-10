@@ -1,0 +1,3 @@
+-- CreateTable
+-- This migration was already applied but the file was missing
+-- Adding empty migration to resolve P3017 error

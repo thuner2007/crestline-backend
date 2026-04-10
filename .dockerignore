@@ -1,0 +1,66 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Logs
+logs
+*.log
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv environment variables file
+.env
+
+# MacOS files
+.DS_Store
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Build directory (when not in build context)
+# dist
+
+# Git
+.git
+.gitignore
+
+# CI/CD
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+test
+coverage
+*.spec.ts
+*.test.ts
+
+# Documentation
+README.md
+docs
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.nyc_output

@@ -1,0 +1,647 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model filament_type {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar
+  description String?  @db.Text
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  colors available_color[]
+  parts  part[]
+
+  @@index([active])
+}
+
+model available_color {
+  id             String         @id @default(uuid())
+  color          String         @db.VarChar
+  filamentType   String         @default("PLA") @db.VarChar
+  filamentTypeId String?
+  filamentTypeRef filament_type? @relation(fields: [filamentTypeId], references: [id], onDelete: SetNull)
+  active         Boolean        @default(true)
+
+  @@index([filamentType])
+  @@index([filamentTypeId])
+  @@index([active])
+}
+
+model powdercoat_color {
+  id     String  @id @default(uuid())
+  color  String  @db.VarChar
+  active Boolean @default(true)
+
+  @@map("powerdercoat_color")
+}
+
+model custom_sticker {
+  id             String   @id @default(uuid())
+  image          String
+  originalImages String[] @default([])
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  OrderItem order_item[]
+}
+
+model tracker {
+  path      String   @id
+  visits    Int      @default(0)
+  lastVisit DateTime @default(now())
+}
+
+model discount {
+  id    String             @id @default(uuid())
+  code  String             @unique @db.VarChar
+  type  discount_type_enum @default(percentage)
+  value Decimal            @db.Decimal(10, 2)
+
+  active     Boolean   @default(true)
+  validFrom  DateTime? @db.Timestamptz(6)
+  validUntil DateTime? @db.Timestamptz(6)
+
+  usageCount Int  @default(0)
+  maxUsage   Int?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  sticker_order sticker_order[]
+
+  @@index([code])
+  @@index([active])
+}
+
+model cart {
+  id                 String    @id @default(uuid())
+  userId             String? // Foreign key to user (for authenticated users)
+  user               user?     @relation(fields: [userId], references: [id])
+  anonymousToken     String?   @unique // Frontend-generated token for anonymous users
+  anonymousExpiresAt DateTime? @db.Timestamptz(6) // Expiration date for anonymous carts (72 hours from creation)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  orderItems           order_item[]
+  partOrderItems       part_order_item[]
+  powdercoatOrderItems powdercoat_order_item[]
+
+  @@index([anonymousToken])
+  @@index([anonymousExpiresAt])
+}
+
+model group {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  // Many-to-many relation with subgroups
+  subgroups subgroup[]
+
+  // Many-to-many relation with stickers
+  stickers sticker[]
+
+  // Relation with translations - Fix relationship
+  translations group_translation[]
+}
+
+model subgroup {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  // Many-to-many relation with groups
+  groups group[]
+
+  // Many-to-many relation with stickers
+  stickers sticker[]
+
+  // Relation with translations - Fix relationship
+  translations subgroup_translation[]
+}
+
+model part_group {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  // Many-to-many relation with parts
+  parts part[]
+
+  // Relation with translations - Fix relationship
+  translations part_group_translation[]
+  image        String?
+}
+
+model bike_model {
+  id           String   @id @default(uuid())
+  manufacturer String   @db.VarChar
+  model        String   @db.VarChar
+  year         Int?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  // Many-to-many relation with parts
+  parts part[]
+
+  @@unique([manufacturer, model, year])
+  @@index([manufacturer])
+  @@index([active])
+}
+
+model variation_group {
+  id        String   @id @default(uuid())
+  name      String   @unique @db.VarChar
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  // One-to-many relation with stickers
+  stickers sticker[]
+}
+
+model sticker {
+  id                   String                       @id @default(uuid()) @map("id")
+  pricePerCm2Printable Decimal?                     @db.Decimal(10, 2)
+  pricePerCm2Vinyl     Decimal?                     @db.Decimal(10, 2)
+  generalPrice         Decimal?                     @db.Decimal(10, 2)
+  price                Decimal?                     @db.Decimal(10, 2)
+  quantity             Int?                         @default(0)
+  printable            Boolean
+  vinyl                Boolean
+  standardMethod       sticker_standard_method_enum @default(vinyl)
+
+  customizationOptions Json     @default("{}")
+  keywords             String[] @default([])
+
+  images String[]
+
+  sold                      Int      @default(0)
+  sortingRank               Int      @default(0)
+  widthToHeightRatio        Decimal? @db.Decimal(10, 2)
+  active                    Boolean  @default(true)
+  textToWidthResponsiveness Boolean? @default(false)
+
+  // Replace array fields with proper relations
+  groups    group[]
+  subgroups subgroup[]
+
+  // Relation to variation group
+  variationsGroupId  String?
+  variationGroup     variation_group? @relation(fields: [variationsGroupId], references: [id])
+  defaultInVariation Boolean          @default(false)
+
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  // Fix translation relationship
+  translations  sticker_translation[]
+  OrderItem     order_item[]
+  todays_choice todays_choice[]
+
+  @@index([active])
+}
+
+model part {
+  id           String   @id @default(uuid()) @map("id")
+  price        Decimal  @db.Decimal(10, 2)
+  initialPrice Decimal? @db.Decimal(10, 2)
+  quantity     Int?     @default(0)
+
+  customizationOptions Json     @default("{}")
+  keywords             String[] @default([])
+
+  images String[]
+  videos String[] @default([])
+
+  sold          Int                 @default(0)
+  sortingRank   Int                 @default(0)
+  active        Boolean             @default(true)
+  shippingReady shipping_ready_enum @default(unknown)
+  shippingDate  DateTime?           @db.Timestamptz(6)
+  type          String?             @db.VarChar
+
+  groups part_group[]
+
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  // Fix translation relationship
+  translations part_translation[]
+  OrderItem    part_order_item[]
+
+  // Relation to part option stock
+  optionStocks  part_option_stock[]
+  todays_choice todays_choice[]
+  links         part_link[]
+
+  weight Decimal? @db.Decimal(10, 2) @default(0)
+  width  Decimal? @db.Decimal(10, 2) @default(0)
+  height Decimal? @db.Decimal(10, 2) @default(0)
+  length Decimal? @db.Decimal(10, 2) @default(0)
+
+  // Self-referential many-to-many relationship for accessories
+  accessories  part[] @relation("PartAccessories")
+  accessoryFor part[] @relation("PartAccessories")
+
+  // Many-to-many relation with bike models
+  bikeModels bike_model[]
+
+  // Many-to-many relation with filament types
+  filamentTypes filament_type[]
+
+  @@index([active])
+}
+
+model part_option_stock {
+  id           String @id @default(uuid())
+  partId       String // Foreign key to part
+  optionId     String // ID of the customization option within the part
+  optionItemId String // ID of the specific dropdown item
+  quantity     Int    @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  // Relation to part
+  part part @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@unique([partId, optionId, optionItemId]) // Prevent duplicate entries for same option item
+  @@index([partId])
+  @@index([optionId])
+}
+
+// Replace the single translation model with specific translation models
+model sticker_translation {
+  id          String  @id @default(uuid())
+  stickerId   String // Foreign key to sticker
+  language    String // "de", "en", "fr", "it"
+  title       String  @db.VarChar
+  description String? @db.VarChar
+
+  // Relation to sticker
+  sticker sticker @relation(fields: [stickerId], references: [id], onDelete: Cascade)
+
+  @@unique([stickerId, language]) // No duplicate language per sticker
+}
+
+model part_translation {
+  id          String  @id @default(uuid())
+  partId      String // Foreign key to sticker
+  language    String // "de", "en", "fr", "it"
+  title       String  @db.VarChar
+  description String? @db.VarChar
+
+  // Relation to sticker
+  part part @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@unique([partId, language]) // No duplicate language per sticker
+}
+
+model group_translation {
+  id       String @id @default(uuid())
+  groupId  String // Foreign key to group
+  language String // "de", "en", "fr", "it"
+  title    String @db.VarChar
+
+  // Relation to group
+  group group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, language]) // No duplicate language per group
+}
+
+model part_group_translation {
+  id          String @id @default(uuid())
+  partGroupId String // Foreign key to part group
+  language    String // "de", "en", "fr", "it"
+  title       String @db.VarChar
+
+  // Relation to part group
+  partGroup part_group @relation(fields: [partGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([partGroupId, language]) // No duplicate language per part group
+}
+
+model subgroup_translation {
+  id         String @id @default(uuid())
+  subgroupId String // Foreign key to subgroup
+  language   String // "de", "en", "fr", "it"
+  title      String @db.VarChar
+
+  // Relation to subgroup
+  subgroup subgroup @relation(fields: [subgroupId], references: [id], onDelete: Cascade)
+
+  @@unique([subgroupId, language]) // No duplicate language per subgroup
+}
+
+model powdercoating_service {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar
+  images      String[] @db.VarChar
+  description String?  @db.VarChar
+  price       Decimal  @db.Decimal(10, 2)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  powdercoatOrderItems powdercoat_order_item[]
+}
+
+model sticker_order {
+  id                    String  @id @default(uuid())
+  firstName             String? @db.VarChar
+  lastName              String? @db.VarChar
+  email                 String? @db.VarChar
+  phone                 String? @db.VarChar
+  street                String? @db.VarChar
+  houseNumber           String? @db.VarChar
+  zipCode               String? @db.VarChar
+  city                  String? @db.VarChar
+  country               String? @db.VarChar
+  additionalAddressInfo String? @db.VarChar
+
+  items           order_item[]
+  partItems       part_order_item[]
+  powdercoatItems powdercoat_order_item[]
+
+  user          user?                            @relation(fields: [userId], references: [id])
+  
+  userId        String?
+  guestEmail    String?                          @db.VarChar
+  paymentMethod sticker_order_paymentmethod_enum
+  orderDate     DateTime                         @default(now()) @db.Timestamptz(6)
+  comment       String?                          @db.VarChar
+
+  status       sticker_order_status_enum @default(stand)
+  totalPrice   Decimal                   @db.Decimal(10, 2)
+  shipmentCost    Decimal                   @default(0) @db.Decimal(10, 2)
+  shipmentCarrier shipping_carrier_enum?
+  discount        discount?                 @relation(fields: [discountId], references: [id])
+  discountId   String?
+  paymentId    String?                   @db.VarChar
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderDate])
+  @@map("sticker_order")
+}
+
+model order_item {
+  id              String          @id @default(uuid())
+  order           sticker_order   @relation(fields: [orderId], references: [id])
+  orderId         String
+  sticker         sticker?        @relation(fields: [stickerId], references: [id])
+  stickerId       String?
+  customSticker   custom_sticker? @relation(fields: [customStickerId], references: [id])
+  customStickerId String?
+
+  width                Decimal
+  height               Decimal
+  vinyl                Boolean
+  printed              Boolean
+  customizationOptions Json    @default("{}")
+  quantity             Int
+
+  cart cart[]
+}
+
+model part_order_item {
+  id      String        @id @default(uuid())
+  order   sticker_order @relation(fields: [orderId], references: [id])
+  orderId String
+  part    part?         @relation(fields: [partId], references: [id])
+  partId  String?
+
+  customizationOptions Json   @default("{}")
+  quantity             Int
+  cart                 cart[]
+}
+
+model powdercoat_order_item {
+  id                     String                 @id @default(uuid())
+  order                  sticker_order          @relation(fields: [orderId], references: [id])
+  orderId                String
+  powdercoatingService   powdercoating_service? @relation(fields: [powdercoatingServiceId], references: [id])
+  powdercoatingServiceId String?
+  color                  String?                @db.VarChar
+
+  customizationOptions Json   @default("{}")
+  quantity             Int
+  cart                 cart[]
+}
+
+model user {
+  id       String         @id @default(uuid())
+  username String         @unique @db.VarChar
+  password String         @db.VarChar
+  role     user_role_enum @default(user)
+
+  keycloakSub  String?             @unique @db.VarChar(255)
+  authProvider auth_provider_enum  @default(legacy)
+
+  firstName             String? @db.VarChar
+  lastName              String? @db.VarChar
+  email                 String? @unique @db.VarChar
+  phone                 String? @db.VarChar
+  street                String? @db.VarChar
+  houseNumber           String? @db.VarChar
+  zipCode               String? @db.VarChar
+  city                  String? @db.VarChar
+  country               String? @db.VarChar
+  additionalAddressInfo String? @db.VarChar
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  sticker_order sticker_order[]
+  push_subscriptions push_subscription[]
+
+  cart cart[]
+}
+
+model todays_choice {
+  id        String   @id @default(uuid())
+  stickerId String?
+  partId    String?
+  sticker   sticker? @relation(fields: [stickerId], references: [id])
+  part      part?    @relation(fields: [partId], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([stickerId])
+  @@index([partId])
+}
+
+model email_validation {
+  id        String   @id @default(uuid())
+  email     String   @db.VarChar
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([email])
+}
+
+model test {
+  id          Int      @id(map: "PK_5417af0062cf987495b611b59c7") @default(autoincrement())
+  name        String   @db.VarChar
+  description String   @db.VarChar
+  createdAt   DateTime @db.Timestamptz(6)
+}
+
+enum discount_type_enum {
+  percentage
+  fixed
+  free_shipping
+}
+
+enum sticker_order_paymentmethod_enum {
+  card
+  paypal
+  bank_transfer
+  twint
+  other
+  stripe
+}
+
+enum sticker_order_status_enum {
+  stand
+  pending
+  processing
+  completed
+  cancelled
+  cart_temp
+}
+
+enum user_role_enum {
+  user
+  admin
+  moderator
+}
+
+enum auth_provider_enum {
+  legacy
+  keycloak
+  both
+}
+
+enum sticker_standard_method_enum {
+  vinyl
+  printable
+}
+
+enum shipping_ready_enum {
+  now
+  in_1_3_days
+  in_4_7_days
+  in_8_14_days
+  unknown
+  pre_order
+}
+
+enum shipping_carrier_enum {
+  swiss_post
+  ups
+}
+
+model blog_post {
+  id            String   @id @default(uuid())
+  author        String   @db.VarChar
+  writingDate   DateTime @db.Timestamptz(6)
+  active        Boolean  @default(false)
+  readCount     Int      @default(0)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+
+  translations  blog_post_translation[]
+  images        blog_image[]
+  links         blog_link[]
+
+  @@index([active])
+  @@index([writingDate])
+}
+
+model blog_post_translation {
+  id              String    @id @default(uuid())
+  blogPostId      String    // Foreign key to blog_post
+  language        String    // "de", "en", "fr", "it"
+  title           String    @db.VarChar
+  markdownContent String    @db.Text
+
+  // Relation to blog_post
+  blogPost blog_post @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+
+  @@unique([blogPostId, language]) // No duplicate language per blog post
+  @@index([blogPostId])
+  @@index([language])
+}
+
+model blog_image {
+  id          String    @id @default(uuid())
+  url         String    @db.VarChar
+  altText     String?   @db.VarChar
+  blogPostId  String
+  blogPost    blog_post @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([blogPostId])
+}
+
+model blog_link {
+  id          String    @id @default(uuid())
+  blogPostId  String
+  blogPost    blog_post @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  translations blog_link_translation[]
+
+  @@index([blogPostId])
+}
+
+model blog_link_translation {
+  id          String    @id @default(uuid())
+  blogLinkId  String
+  language    String    // "de", "en", "fr", "it"
+  url         String    @db.VarChar
+  title       String    @db.VarChar
+  blogLink    blog_link @relation(fields: [blogLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([blogLinkId, language]) // No duplicate language per link
+  @@index([blogLinkId])
+  @@index([language])
+}
+
+model push_subscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique @db.VarChar
+  p256dh    String   @db.VarChar
+  auth      String   @db.VarChar
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([endpoint])
+}
+
+model part_link {
+  id          String    @id @default(uuid())
+  partId      String
+  part        part      @relation(fields: [partId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  translations part_link_translation[]
+
+  @@index([partId])
+}
+
+model part_link_translation {
+  id          String    @id @default(uuid())
+  partLinkId  String
+  language    String    // "de", "en", "fr", "it"
+  url         String    @db.VarChar
+  title       String    @db.VarChar
+  partLink    part_link @relation(fields: [partLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([partLinkId, language]) // No duplicate language per link
+  @@index([partLinkId])
+  @@index([language])
+}

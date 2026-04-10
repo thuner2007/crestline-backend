@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="RevSticks" />
+    <title>RevSticks - Push Notifications</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+      }
+      button {
+        width: 100%;
+        padding: 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 10px 0;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+      .status {
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      .config-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+      .config-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 18px;
+      }
+      .input-group {
+        margin-bottom: 15px;
+      }
+      .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+        font-weight: 500;
+      }
+      .input-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+      .hidden {
+        display: none;
+      }
+      .emoji {
+        font-size: 48px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="emoji">🔔</div>
+      <h1>RevSticks Notifications</h1>
+      <p class="subtitle">Get instant alerts for new orders</p>
+
+      <div id="status"></div>
+
+      <div id="configSection" class="config-section">
+        <h3>⚙️ Configuration</h3>
+        <div class="input-group">
+          <label>Backend URL:</label>
+          <input
+            type="text"
+            id="apiUrl"
+            placeholder="https://your-backend.com"
+            value="http://localhost:1111"
+          />
+        </div>
+        <div class="input-group">
+          <label>Auth Token:</label>
+          <input
+            type="password"
+            id="authToken"
+            placeholder="Your authentication token"
+          />
+        </div>
+        <button class="btn-primary" onclick="saveConfig()">
+          Save Configuration
+        </button>
+      </div>
+
+      <div id="buttonSection" class="hidden">
+        <button
+          id="subscribeBtn"
+          class="btn-primary"
+          onclick="subscribeToPush()"
+        >
+          🔔 Enable Notifications
+        </button>
+
+        <button
+          id="unsubscribeBtn"
+          class="btn-danger hidden"
+          onclick="unsubscribeFromPush()"
+        >
+          🔕 Disable Notifications
+        </button>
+
+        <button
+          id="testBtn"
+          class="btn-success hidden"
+          onclick="testNotification()"
+        >
+          ✉️ Send Test Notification
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let API_URL = localStorage.getItem('apiUrl') || 'http://localhost:1111';
+      let AUTH_TOKEN = localStorage.getItem('authToken') || '';
+
+      // Load saved config
+      window.addEventListener('load', () => {
+        document.getElementById('apiUrl').value = API_URL;
+        document.getElementById('authToken').value = AUTH_TOKEN;
+
+        if (API_URL && AUTH_TOKEN) {
+          document.getElementById('configSection').classList.add('hidden');
+          document.getElementById('buttonSection').classList.remove('hidden');
+          checkSubscriptionStatus();
+        }
+      });
+
+      function saveConfig() {
+        API_URL = document.getElementById('apiUrl').value.trim();
+        AUTH_TOKEN = document.getElementById('authToken').value.trim();
+
+        if (!API_URL || !AUTH_TOKEN) {
+          showStatus('Please fill in both fields', 'error');
+          return;
+        }
+
+        localStorage.setItem('apiUrl', API_URL);
+        localStorage.setItem('authToken', AUTH_TOKEN);
+
+        document.getElementById('configSection').classList.add('hidden');
+        document.getElementById('buttonSection').classList.remove('hidden');
+        showStatus('✅ Configuration saved!', 'success');
+        checkSubscriptionStatus();
+      }
+
+      function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+          .replace(/\-/g, '+')
+          .replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+      }
+
+      function showStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+      }
+
+      async function subscribeToPush() {
+        try {
+          if (!('serviceWorker' in navigator)) {
+            throw new Error('Service workers are not supported');
+          }
+
+          if (!('PushManager' in window)) {
+            throw new Error('Push notifications are not supported');
+          }
+
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            throw new Error('Notification permission denied');
+          }
+
+          showStatus('⏳ Setting up notifications...', 'info');
+
+          // Create and register service worker
+          const swCode = `
+                    self.addEventListener('push', function(event) {
+                        if (event.data) {
+                            const data = event.data.json();
+                            const options = {
+                                body: data.body,
+                                icon: data.icon || '/icon.png',
+                                badge: data.badge || '/badge.png',
+                                data: data.data,
+                                vibrate: [200, 100, 200],
+                                tag: data.data?.orderId || 'revsticks-notification',
+                                requireInteraction: true
+                            };
+                            event.waitUntil(
+                                self.registration.showNotification(data.title, options)
+                            );
+                        }
+                    });
+
+                    self.addEventListener('notificationclick', function(event) {
+                        event.notification.close();
+                        const orderId = event.notification.data?.orderId;
+                        const url = orderId 
+                            ? 'https://your-frontend.com/orders/' + orderId
+                            : 'https://your-frontend.com/orders';
+                        event.waitUntil(clients.openWindow(url));
+                    });
+                `;
+
+          const blob = new Blob([swCode], { type: 'application/javascript' });
+          const swUrl = URL.createObjectURL(blob);
+
+          const registration = await navigator.serviceWorker.register(swUrl);
+          await navigator.serviceWorker.ready;
+
+          // Get VAPID public key
+          const response = await fetch(
+            `${API_URL}/notifications/vapid-public-key`,
+          );
+          if (!response.ok) throw new Error('Failed to get VAPID key');
+          const { publicKey } = await response.json();
+
+          // Subscribe to push
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+
+          // Send to backend
+          const subscribeResponse = await fetch(
+            `${API_URL}/notifications/subscribe`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${AUTH_TOKEN}`,
+              },
+              body: JSON.stringify(subscription),
+            },
+          );
+
+          if (!subscribeResponse.ok) {
+            throw new Error('Failed to subscribe on backend');
+          }
+
+          showStatus('✅ Successfully subscribed to notifications!', 'success');
+          document.getElementById('subscribeBtn').classList.add('hidden');
+          document.getElementById('unsubscribeBtn').classList.remove('hidden');
+          document.getElementById('testBtn').classList.remove('hidden');
+
+          localStorage.setItem(
+            'pushSubscription',
+            JSON.stringify(subscription),
+          );
+        } catch (error) {
+          showStatus(`❌ Error: ${error.message}`, 'error');
+          console.error('Subscribe error:', error);
+        }
+      }
+
+      async function unsubscribeFromPush() {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+
+          if (subscription) {
+            await subscription.unsubscribe();
+
+            await fetch(`${API_URL}/notifications/unsubscribe`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ endpoint: subscription.endpoint }),
+            });
+
+            localStorage.removeItem('pushSubscription');
+          }
+
+          showStatus(
+            '✅ Successfully unsubscribed from notifications',
+            'success',
+          );
+          document.getElementById('subscribeBtn').classList.remove('hidden');
+          document.getElementById('unsubscribeBtn').classList.add('hidden');
+          document.getElementById('testBtn').classList.add('hidden');
+        } catch (error) {
+          showStatus(`❌ Error: ${error.message}`, 'error');
+          console.error('Unsubscribe error:', error);
+        }
+      }
+
+      async function testNotification() {
+        try {
+          const response = await fetch(`${API_URL}/notifications/test`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${AUTH_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to send test notification');
+          }
+
+          showStatus(
+            '✅ Test notification sent! Check your device.',
+            'success',
+          );
+        } catch (error) {
+          showStatus(`❌ Error: ${error.message}`, 'error');
+          console.error('Test error:', error);
+        }
+      }
+
+      async function checkSubscriptionStatus() {
+        try {
+          if ('serviceWorker' in navigator && 'PushManager' in window) {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription =
+              await registration.pushManager.getSubscription();
+
+            if (subscription) {
+              document.getElementById('subscribeBtn').classList.add('hidden');
+              document
+                .getElementById('unsubscribeBtn')
+                .classList.remove('hidden');
+              document.getElementById('testBtn').classList.remove('hidden');
+              showStatus('✅ You are subscribed to notifications', 'success');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking subscription:', error);
+        }
+      }
+    </script>
+  </body>
+</html>

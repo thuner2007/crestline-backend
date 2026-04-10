@@ -1,0 +1,147 @@
+### Upload Blog Images
+POST http://localhost:3000/blog/upload-images
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+------WebKitFormBoundary--
+
+###
+
+### Create Blog Post with Markdown (Simple Example)
+POST http://localhost:3000/blog
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+{
+  "author": "John Doe",
+  "writingDate": "2025-11-09T10:00:00.000Z",
+  "active": false,
+  "translations": [
+    {
+      "language": "en",
+      "title": "My First Markdown Blog Post",
+      "markdownContent": "# Welcome to My Blog\n\nThis is my first blog post using **Markdown**!\n\n## Why Markdown?\n\n- Easy to write\n- Easy to read\n- Portable\n\n### Adding Images\n\nYou can add images directly in the text:\n\n![Example Image](https://your-minio-url.com/blog/example.jpg)\n\n### Code Snippets\n\n```javascript\nconst hello = 'world';\nconsole.log(hello);\n```\n\n> This is a quote\n\nVisit [our website](https://example.com) for more!"
+    },
+    {
+      "language": "de",
+      "title": "Mein erster Markdown-Blog-Beitrag",
+      "markdownContent": "# Willkommen in meinem Blog\n\nDies ist mein erster Blog-Beitrag mit **Markdown**!\n\n## Warum Markdown?\n\n- Einfach zu schreiben\n- Einfach zu lesen\n- Portabel\n\n### Bilder hinzufügen\n\nSie können Bilder direkt im Text hinzufügen:\n\n![Beispielbild](https://your-minio-url.com/blog/example.jpg)"
+    }
+  ],
+  "images": [
+    {
+      "url": "https://your-minio-url.com/blog/example.jpg",
+      "altText": "Example image for blog post"
+    }
+  ],
+  "links": [
+    {
+      "url": "https://example.com",
+      "title": "Our Website"
+    }
+  ]
+}
+
+###
+
+### Create Blog Post with Multiple Embedded Images
+POST http://localhost:3000/blog
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+{
+  "author": "Jane Smith",
+  "writingDate": "2025-11-09T14:00:00.000Z",
+  "active": false,
+  "translations": [
+    {
+      "language": "en",
+      "title": "Product Gallery: RevSticks 2025",
+      "markdownContent": "# RevSticks 2025 Collection\n\nIntroducing our latest collection!\n\n## Classic Series\n\n![Classic Red](https://your-minio-url.com/blog/classic-red.jpg)\n\nThe **Classic Red** model features:\n- Premium grip\n- Lightweight design\n- Durable construction\n\n## Modern Series\n\n![Modern Blue](https://your-minio-url.com/blog/modern-blue.jpg)\n\nThe **Modern Blue** brings innovation:\n- Advanced materials\n- Ergonomic shape\n- Enhanced performance\n\n## Limited Edition\n\n![Gold Edition](https://your-minio-url.com/blog/gold-edition.jpg)\n\nOur exclusive **Gold Edition** is limited to 100 units!\n\n### Specifications\n\n| Model | Weight | Length | Price |\n|-------|--------|--------|-------|\n| Classic | 150g | 40cm | $99 |\n| Modern | 140g | 42cm | $129 |\n| Gold | 145g | 41cm | $299 |\n\n---\n\n*Pre-order now and get 10% off!*"
+    }
+  ],
+  "images": [
+    {
+      "url": "https://your-minio-url.com/blog/classic-red.jpg",
+      "altText": "Classic Red RevStick"
+    },
+    {
+      "url": "https://your-minio-url.com/blog/modern-blue.jpg",
+      "altText": "Modern Blue RevStick"
+    },
+    {
+      "url": "https://your-minio-url.com/blog/gold-edition.jpg",
+      "altText": "Gold Edition RevStick"
+    }
+  ]
+}
+
+###
+
+### Get All Blog Posts (Public)
+GET http://localhost:3000/blog
+
+###
+
+### Get Active Blog Posts Only (Public)
+GET http://localhost:3000/blog?activeOnly=true
+
+###
+
+### Get Blog Posts in English (Public)
+GET http://localhost:3000/blog?language=en
+
+###
+
+### Get Active Blog Posts in German (Public)
+GET http://localhost:3000/blog?activeOnly=true&language=de
+
+###
+
+### Get Single Blog Post (Public)
+GET http://localhost:3000/blog/YOUR_BLOG_ID_HERE
+
+###
+
+### Get Single Blog Post in French (Public)
+GET http://localhost:3000/blog/YOUR_BLOG_ID_HERE?language=fr
+
+###
+
+### Update Blog Post
+PATCH http://localhost:3000/blog/YOUR_BLOG_ID_HERE
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+{
+  "translations": [
+    {
+      "language": "en",
+      "title": "Updated Title",
+      "markdownContent": "# Updated Content\n\nThis is the **updated** markdown content.\n\n![New Image](https://your-minio-url.com/blog/new-image.jpg)"
+    }
+  ]
+}
+
+###
+
+### Activate Blog Post
+PATCH http://localhost:3000/blog/YOUR_BLOG_ID_HERE/activate
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+###
+
+### Deactivate Blog Post
+PATCH http://localhost:3000/blog/YOUR_BLOG_ID_HERE/deactivate
+Authorization: Bearer YOUR_AUTH_TOKEN
+
+###
+
+### Delete Blog Post
+DELETE http://localhost:3000/blog/YOUR_BLOG_ID_HERE
+Authorization: Bearer YOUR_AUTH_TOKEN

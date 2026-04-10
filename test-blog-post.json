@@ -1,0 +1,29 @@
+{
+  "author": "John Doe",
+  "writingDate": "2025-11-10",
+  "active": true,
+  "translations": [
+    {
+      "language": "de",
+      "title": "German Title",
+      "markdownContent": "# German Content\n\nSome markdown text..."
+    },
+    {
+      "language": "en",
+      "title": "English Title",
+      "markdownContent": "# English Content\n\nSome markdown text..."
+    }
+  ],
+  "images": [
+    {
+      "url": "https://example.com/image1.jpg",
+      "altText": "Image description"
+    }
+  ],
+  "links": [
+    {
+      "url": "https://example.com",
+      "title": "Example Link"
+    }
+  ]
+}
