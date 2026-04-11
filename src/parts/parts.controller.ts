@@ -94,7 +94,7 @@ export class PartsController {
       try {
         const delay = baseDelay + i * 50;
         const uploadedUrl = await this.minioService.uploadFile(
-          'parts',
+          'crestline-parts',
           file,
           true,
           delay,
@@ -121,7 +121,7 @@ export class PartsController {
       try {
         const delay = videoBaseDelay + i * 50;
         const uploadedUrl = await this.minioService.uploadFile(
-          'parts',
+          'crestline-parts',
           file,
           true,
           delay,
@@ -457,7 +457,7 @@ export class PartsController {
         try {
           const delay = imageBaseDelay + i * 50;
           const uploadedUrl = await this.minioService.uploadFile(
-            'parts',
+            'crestline-parts',
             file,
             true,
             delay,
@@ -482,7 +482,7 @@ export class PartsController {
         try {
           const delay = videoBaseDelay + i * 50;
           const uploadedUrl = await this.minioService.uploadFile(
-            'parts',
+            'crestline-parts',
             file,
             true,
             delay,

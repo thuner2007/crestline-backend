@@ -50,7 +50,7 @@ export class GroupsController {
     if (files && files.length > 0) {
       // Upload image to MinIO and get the path
       imageUrl = await this.minioService.uploadFile(
-        'part-groups',
+        'crestline-part-groups',
         files[0],
         true,
       );

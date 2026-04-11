@@ -59,7 +59,7 @@ export class PowdercoatServiceController {
           await new Promise((resolve) => setTimeout(resolve, baseDelay));
         }
         const imageUrl = await this.minioService.uploadFile(
-          'powdercoat-services',
+          'crestline-powdercoat-services',
           file,
           true,
         );
@@ -132,7 +132,7 @@ export class PowdercoatServiceController {
             await new Promise((resolve) => setTimeout(resolve, baseDelay));
           }
           const imageUrl = await this.minioService.uploadFile(
-            'powdercoat-services',
+            'crestline-powdercoat-services',
             file,
             true,
           );

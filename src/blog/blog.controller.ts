@@ -39,7 +39,9 @@ export class BlogController {
 
     // Upload images to MinIO and get their paths
     const imageUrls = await Promise.all(
-      files.map((file) => this.minioService.uploadFile('blog', file, true)),
+      files.map((file) =>
+        this.minioService.uploadFile('crestline-blog', file, true),
+      ),
     );
 
     return { imageUrls };
@@ -55,8 +57,12 @@ export class BlogController {
       throw new BadRequestException('Image file is required');
     }
 
-    // Upload image to MinIO public bucket 'blog' and get the URL
-    const imageUrl = await this.minioService.uploadFile('blog', file, true);
+    // Upload image to MinIO public bucket 'crestline-blog' and get the URL
+    const imageUrl = await this.minioService.uploadFile(
+      'crestline-blog',
+      file,
+      true,
+    );
 
     return { imageUrl };
   }
