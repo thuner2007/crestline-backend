@@ -92,7 +92,6 @@ export class StickerOrderController {
     return this.stickerOrderService.calculatePrice(
       data.orderItems,
       data.partOrderItems || [],
-      data.powdercoatServiceOrderItems || [],
       data.discountCode,
       data.shippingAddress,
     );

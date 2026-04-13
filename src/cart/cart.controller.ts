@@ -107,27 +107,6 @@ class AddPartToCartDto {
   customizationOptions?: CustomizationOptionDto[];
 }
 
-// DTO for adding a powdercoat service to the cart
-class AddPowdercoatServiceToCartDto {
-  @IsUUID()
-  powdercoatingServiceId: string;
-
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  quantity: number;
-
-  @IsOptional()
-  @IsString()
-  color?: string;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CustomizationOptionDto)
-  customizationOptions?: CustomizationOptionDto[];
-}
-
 // DTO for getting item recommendations to reach 100 CHF
 class GetRecommendationsDto {
   @IsNumber()
@@ -205,27 +184,6 @@ export class CartController {
   }
 
   /**
-   * Add powdercoat service to cart - supports both authenticated and anonymous users
-   */
-  @Post('powdercoat-service')
-  async addPowdercoatServiceToCart(
-    @Body() addPowdercoatServiceDto: AddPowdercoatServiceToCartDto,
-    @Query('userId') userId?: string,
-    @Query('anonymousToken') anonymousToken?: string,
-  ) {
-    if (!userId && !anonymousToken) {
-      throw new BadRequestException(
-        'Either userId or anonymousToken is required',
-      );
-    }
-    return this.cartService.addPowdercoatServiceToCart(
-      addPowdercoatServiceDto,
-      userId,
-      anonymousToken,
-    );
-  }
-
-  /**
    * Update sticker quantity in cart
    */
   @Patch('sticker/amount/:id')
@@ -272,29 +230,6 @@ export class CartController {
   }
 
   /**
-   * Update powdercoat service quantity in cart
-   */
-  @Patch('powdercoat-service/amount/:id')
-  async updatePowdercoatServiceAmount(
-    @Param('id') powdercoatOrderItemId: string,
-    @Body('amount') amount: number,
-    @Query('userId') userId?: string,
-    @Query('anonymousToken') anonymousToken?: string,
-  ) {
-    if (!userId && !anonymousToken) {
-      throw new BadRequestException(
-        'Either userId or anonymousToken is required',
-      );
-    }
-    return this.cartService.updatePowdercoatServiceAmount(
-      powdercoatOrderItemId,
-      amount,
-      userId,
-      anonymousToken,
-    );
-  }
-
-  /**
    * Remove sticker from cart
    */
   @Delete('sticker/:id')
@@ -331,27 +266,6 @@ export class CartController {
     }
     return this.cartService.removePartFromCart(
       partOrderItemId,
-      userId,
-      anonymousToken,
-    );
-  }
-
-  /**
-   * Remove powdercoat service from cart
-   */
-  @Delete('powdercoat-service/:id')
-  async removePowdercoatServiceFromCart(
-    @Param('id') powdercoatOrderItemId: string,
-    @Query('userId') userId?: string,
-    @Query('anonymousToken') anonymousToken?: string,
-  ) {
-    if (!userId && !anonymousToken) {
-      throw new BadRequestException(
-        'Either userId or anonymousToken is required',
-      );
-    }
-    return this.cartService.removePowdercoatServiceFromCart(
-      powdercoatOrderItemId,
       userId,
       anonymousToken,
     );

@@ -84,26 +84,6 @@ export class PartOrderItemDto {
   customizationOptions?: any[];
 }
 
-// DTO for powdercoat service order items
-export class PowdercoatServiceOrderItemDto {
-  @IsUUID()
-  powdercoatingServiceId: string;
-
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  quantity: number;
-
-  @IsOptional()
-  @IsString()
-  color?: string;
-
-  @IsOptional()
-  @IsArray()
-  @Type(() => Object)
-  customizationOptions?: any[];
-}
-
 // DTO for creating a sticker order
 export class CreateStickerOrderDto {
   @IsOptional()
@@ -156,12 +136,6 @@ export class CreateStickerOrderDto {
   @ValidateNested({ each: true })
   @Type(() => PartOrderItemDto)
   partOrderItems?: PartOrderItemDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PowdercoatServiceOrderItemDto)
-  powdercoatServiceOrderItems?: PowdercoatServiceOrderItemDto[];
 
   @IsOptional()
   @IsUUID()
@@ -228,12 +202,6 @@ export class CalculatePriceDto {
   @ValidateNested({ each: true })
   @Type(() => PartOrderItemDto)
   partOrderItems?: PartOrderItemDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PowdercoatServiceOrderItemDto)
-  powdercoatServiceOrderItems?: PowdercoatServiceOrderItemDto[];
 
   @IsOptional()
   @IsString()

@@ -59,11 +59,6 @@ export class CartService {
             },
           },
         },
-        powdercoatOrderItems: {
-          include: {
-            powdercoatingService: true,
-          },
-        },
       },
     });
 
@@ -90,52 +85,6 @@ export class CartService {
               } catch (error) {
                 this.logger.warn(
                   `Could not fetch color with ID ${option.value}:`,
-                  error,
-                );
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Process powdercoatOrderItems to replace color IDs with full color objects
-    if (cartData?.powdercoatOrderItems) {
-      for (const item of cartData.powdercoatOrderItems) {
-        // Handle color field (simple string ID)
-        if (item.color && typeof item.color === 'string') {
-          try {
-            const color = await this.prisma.powdercoat_color.findUnique({
-              where: { id: item.color },
-            });
-            if (color) {
-              item['colorDetails'] = color;
-            }
-          } catch (error) {
-            this.logger.warn(
-              `Could not fetch powdercoat color with ID ${item.color}:`,
-              error,
-            );
-          }
-        }
-
-        // Handle customizationOptions array
-        if (
-          item.customizationOptions &&
-          Array.isArray(item.customizationOptions)
-        ) {
-          for (const option of item.customizationOptions as any[]) {
-            if (option.type === 'color' && typeof option.value === 'string') {
-              try {
-                const color = await this.prisma.powdercoat_color.findUnique({
-                  where: { id: option.value },
-                });
-                if (color) {
-                  option.colorDetails = color;
-                }
-              } catch (error) {
-                this.logger.warn(
-                  `Could not fetch powdercoat color with ID ${option.value}:`,
                   error,
                 );
               }
@@ -294,59 +243,6 @@ export class CartService {
   }
 
   /**
-   * Add a powdercoat service to the cart
-   * Supports both authenticated and anonymous users
-   */
-  async addPowdercoatServiceToCart(
-    data: {
-      powdercoatingServiceId: string;
-      quantity: number;
-      color?: string;
-      customizationOptions?: any;
-    },
-    userId?: string,
-    anonymousToken?: string,
-  ) {
-    // Find or create cart
-    const cart = await this.findOrCreateCart(userId, anonymousToken);
-
-    this.logger.log(JSON.stringify(data));
-
-    // Create the powdercoat order item
-    const powdercoatOrderItem = await this.prisma.powdercoat_order_item.create({
-      data: {
-        powdercoatingService: {
-          connect: { id: data.powdercoatingServiceId },
-        },
-        quantity: data.quantity,
-        color: data.color || null, // Store color as simple string
-        // Store customizationOptions as is, without modification
-        customizationOptions: data.customizationOptions || [],
-        // Create a temporary order for this item
-        order: {
-          create: {
-            paymentMethod: 'stripe', // Default value, will be updated when checking out
-            totalPrice: 0, // Will be calculated when checking out
-            status: 'cart_temp', // Temporary status for cart items
-          },
-        },
-      },
-    });
-
-    // Connect the powdercoat order item to the cart
-    await this.prisma.cart.update({
-      where: { id: cart.id },
-      data: {
-        powdercoatOrderItems: {
-          connect: { id: powdercoatOrderItem.id },
-        },
-      },
-    });
-
-    return this.getCart(userId, anonymousToken);
-  }
-
-  /**
    * Remove a sticker item from the cart
    */
   async removeStickerFromCart(
@@ -497,90 +393,6 @@ export class CartService {
   }
 
   /**
-   * Remove a powdercoat service item from the cart
-   */
-  async removePowdercoatServiceFromCart(
-    powdercoatOrderItemId: string,
-    userId?: string,
-    anonymousToken?: string,
-  ) {
-    const cart = await this.findOrCreateCart(userId, anonymousToken);
-
-    // Check if the item exists in the cart
-    const cartWithItem = await this.prisma.cart.findFirst({
-      where: {
-        id: cart.id,
-        powdercoatOrderItems: {
-          some: {
-            id: powdercoatOrderItemId,
-          },
-        },
-      },
-    });
-
-    if (!cartWithItem) {
-      throw new NotFoundException(
-        'Powdercoat service item not found in the cart',
-      );
-    }
-
-    // Disconnect the powdercoat order item from the cart
-    await this.prisma.cart.update({
-      where: { id: cart.id },
-      data: {
-        powdercoatOrderItems: {
-          disconnect: { id: powdercoatOrderItemId },
-        },
-      },
-    });
-
-    // Delete the orphaned powdercoat order item
-    await this.prisma.powdercoat_order_item.delete({
-      where: { id: powdercoatOrderItemId },
-    });
-
-    return this.getCart(userId, anonymousToken);
-  }
-
-  /**
-   * Update quantity of a powdercoat service in the cart
-   */
-  async updatePowdercoatServiceAmount(
-    powdercoatOrderItemId: string,
-    amount: number,
-    userId?: string,
-    anonymousToken?: string,
-  ) {
-    const cart = await this.findOrCreateCart(userId, anonymousToken);
-
-    // Check if the item exists in the cart
-    const cartWithItem = await this.prisma.cart.findFirst({
-      where: {
-        id: cart.id,
-        powdercoatOrderItems: {
-          some: {
-            id: powdercoatOrderItemId,
-          },
-        },
-      },
-    });
-
-    if (!cartWithItem) {
-      throw new NotFoundException(
-        'Powdercoat service item not found in the cart',
-      );
-    }
-
-    // Update the quantity of the powdercoat order item
-    await this.prisma.powdercoat_order_item.update({
-      where: { id: powdercoatOrderItemId },
-      data: { quantity: amount },
-    });
-
-    return this.getCart(userId, anonymousToken);
-  }
-
-  /**
    * Find or create a cart for the user or anonymous token
    * Supports both authenticated users (userId) and anonymous users (anonymousToken)
    * Anonymous carts expire after 72 hours
@@ -657,7 +469,6 @@ export class CartService {
       include: {
         orderItems: true,
         partOrderItems: true,
-        powdercoatOrderItems: true,
       },
     });
 
@@ -673,11 +484,6 @@ export class CartService {
             id: item.id,
           })),
         },
-        powdercoatOrderItems: {
-          disconnect: cartWithItems.powdercoatOrderItems.map((item) => ({
-            id: item.id,
-          })),
-        },
       },
     });
 
@@ -690,12 +496,6 @@ export class CartService {
 
     for (const item of cartWithItems.partOrderItems) {
       await this.prisma.part_order_item.delete({
-        where: { id: item.id },
-      });
-    }
-
-    for (const item of cartWithItems.powdercoatOrderItems) {
-      await this.prisma.powdercoat_order_item.delete({
         where: { id: item.id },
       });
     }
@@ -733,12 +533,8 @@ export class CartService {
    */
   private getItemName(
     item: any,
-    type: 'part' | 'sticker' | 'powdercoat',
+    type: 'part' | 'sticker',
   ): string {
-    if (type === 'powdercoat') {
-      return item.name || 'Powdercoat Service';
-    }
-
     // For parts and stickers, try to get English translation first, then fallback to any translation
     if (item.translations && item.translations.length > 0) {
       const enTranslation = item.translations.find(
@@ -778,7 +574,7 @@ export class CartService {
 
   /**
    * Get recommendations to reach at least 100 CHF from the current cost amount
-   * Returns items (parts, stickers, or powdercoat services) that when added to costAmount
+   * Returns items (parts or stickers) that when added to costAmount
    * will reach at least 100 CHF. Excludes items already in cart.
    */
   async getRecommendations(costAmount: number, itemsIdInCart: string[]) {
@@ -794,7 +590,7 @@ export class CartService {
     }
 
     // Fetch all active items from the database
-    const [parts, stickers, powdercoatServices] = await Promise.all([
+    const [parts, stickers] = await Promise.all([
       this.prisma.part.findMany({
         where: {
           active: true,
@@ -813,18 +609,12 @@ export class CartService {
           translations: true,
         },
       }),
-      this.prisma.powdercoating_service.findMany({
-        where: {
-          active: true,
-          id: { notIn: itemsIdInCart },
-        },
-      }),
     ]);
 
     // Prepare all items with their prices
     const allItems: Array<{
       id: string;
-      type: 'part' | 'sticker' | 'powdercoat';
+      type: 'part' | 'sticker';
       price: number;
       data: any;
     }> = [];
@@ -857,16 +647,6 @@ export class CartService {
           data: sticker,
         });
       }
-    });
-
-    // Add powdercoat services
-    powdercoatServices.forEach((service) => {
-      allItems.push({
-        id: service.id,
-        type: 'powdercoat',
-        price: Number(service.price),
-        data: service,
-      });
     });
 
     // Sort items by how close they get to the needed amount without going under
@@ -1027,7 +807,6 @@ export class CartService {
       include: {
         orderItems: true,
         partOrderItems: true,
-        powdercoatOrderItems: true,
       },
     });
 
@@ -1046,13 +825,6 @@ export class CartService {
         // Delete all part order items
         for (const item of cart.partOrderItems) {
           await this.prisma.part_order_item.delete({ where: { id: item.id } });
-        }
-
-        // Delete all powdercoat order items
-        for (const item of cart.powdercoatOrderItems) {
-          await this.prisma.powdercoat_order_item.delete({
-            where: { id: item.id },
-          });
         }
 
         // Delete the cart itself

@@ -34,14 +34,6 @@ model available_color {
   @@index([active])
 }
 
-model powdercoat_color {
-  id     String  @id @default(uuid())
-  color  String  @db.VarChar
-  active Boolean @default(true)
-
-  @@map("powerdercoat_color")
-}
-
 model custom_sticker {
   id             String   @id @default(uuid())
   image          String
@@ -89,7 +81,6 @@ model cart {
 
   orderItems           order_item[]
   partOrderItems       part_order_item[]
-  powdercoatOrderItems powdercoat_order_item[]
 
   @@index([anonymousToken])
   @@index([anonymousExpiresAt])
@@ -133,23 +124,6 @@ model part_group {
   // Relation with translations - Fix relationship
   translations part_group_translation[]
   image        String?
-}
-
-model bike_model {
-  id           String   @id @default(uuid())
-  manufacturer String   @db.VarChar
-  model        String   @db.VarChar
-  year         Int?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
-
-  // Many-to-many relation with parts
-  parts part[]
-
-  @@unique([manufacturer, model, year])
-  @@index([manufacturer])
-  @@index([active])
 }
 
 model variation_group {
@@ -245,9 +219,6 @@ model part {
   accessories  part[] @relation("PartAccessories")
   accessoryFor part[] @relation("PartAccessories")
 
-  // Many-to-many relation with bike models
-  bikeModels bike_model[]
-
   // Many-to-many relation with filament types
   filamentTypes filament_type[]
 
@@ -335,19 +306,6 @@ model subgroup_translation {
   @@unique([subgroupId, language]) // No duplicate language per subgroup
 }
 
-model powdercoating_service {
-  id          String   @id @default(uuid())
-  name        String   @db.VarChar
-  images      String[] @db.VarChar
-  description String?  @db.VarChar
-  price       Decimal  @db.Decimal(10, 2)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-
-  powdercoatOrderItems powdercoat_order_item[]
-}
-
 model sticker_order {
   id                    String  @id @default(uuid())
   firstName             String? @db.VarChar
@@ -363,7 +321,6 @@ model sticker_order {
 
   items           order_item[]
   partItems       part_order_item[]
-  powdercoatItems powdercoat_order_item[]
 
   user          user?                            @relation(fields: [userId], references: [id])
   
@@ -412,19 +369,6 @@ model part_order_item {
   orderId String
   part    part?         @relation(fields: [partId], references: [id])
   partId  String?
-
-  customizationOptions Json   @default("{}")
-  quantity             Int
-  cart                 cart[]
-}
-
-model powdercoat_order_item {
-  id                     String                 @id @default(uuid())
-  order                  sticker_order          @relation(fields: [orderId], references: [id])
-  orderId                String
-  powdercoatingService   powdercoating_service? @relation(fields: [powdercoatingServiceId], references: [id])
-  powdercoatingServiceId String?
-  color                  String?                @db.VarChar
 
   customizationOptions Json   @default("{}")
   quantity             Int
@@ -540,73 +484,6 @@ enum shipping_ready_enum {
 enum shipping_carrier_enum {
   swiss_post
   ups
-}
-
-model blog_post {
-  id            String   @id @default(uuid())
-  author        String   @db.VarChar
-  writingDate   DateTime @db.Timestamptz(6)
-  active        Boolean  @default(false)
-  readCount     Int      @default(0)
-  createdAt     DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
-
-  translations  blog_post_translation[]
-  images        blog_image[]
-  links         blog_link[]
-
-  @@index([active])
-  @@index([writingDate])
-}
-
-model blog_post_translation {
-  id              String    @id @default(uuid())
-  blogPostId      String    // Foreign key to blog_post
-  language        String    // "de", "en", "fr", "it"
-  title           String    @db.VarChar
-  markdownContent String    @db.Text
-
-  // Relation to blog_post
-  blogPost blog_post @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
-
-  @@unique([blogPostId, language]) // No duplicate language per blog post
-  @@index([blogPostId])
-  @@index([language])
-}
-
-model blog_image {
-  id          String    @id @default(uuid())
-  url         String    @db.VarChar
-  altText     String?   @db.VarChar
-  blogPostId  String
-  blogPost    blog_post @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([blogPostId])
-}
-
-model blog_link {
-  id          String    @id @default(uuid())
-  blogPostId  String
-  blogPost    blog_post @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
-
-  translations blog_link_translation[]
-
-  @@index([blogPostId])
-}
-
-model blog_link_translation {
-  id          String    @id @default(uuid())
-  blogLinkId  String
-  language    String    // "de", "en", "fr", "it"
-  url         String    @db.VarChar
-  title       String    @db.VarChar
-  blogLink    blog_link @relation(fields: [blogLinkId], references: [id], onDelete: Cascade)
-
-  @@unique([blogLinkId, language]) // No duplicate language per link
-  @@index([blogLinkId])
-  @@index([language])
 }
 
 model push_subscription {

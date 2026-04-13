@@ -12,7 +12,6 @@ import { StickerOrderModule } from './orders/order.module';
 import { StripeModule } from './stripe/stripe.module';
 import { DiscountsModule } from './discounts/discount.module';
 import { AvailableColorsModule } from './availableColors/availableColors.module';
-import { PowdercoatColorsModule } from './powdercoatColors/powdercoatColors.module';
 import { GroupsModule } from './groups/groups.module';
 import { PrismaService } from 'prisma/prisma.service';
 import { VariationModule } from './variation/variation.module';
@@ -23,10 +22,7 @@ import { TrackerModule } from './tracker/tracker.module';
 import { CartModule } from './cart/cart.module';
 import { MailModule } from './mail/mail.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
-import { PowdercoatServiceModule } from './powdercoatService/powdercoatService.module';
-import { BlogModule } from './blog/blog.module';
 import { NotificationModule } from './notifications/notification.module';
-import { BikeModelsModule } from './bikeModels/bike-models.module';
 import { FilamentTypesModule } from './filamentTypes/filamentTypes.module';
 
 @Module({
@@ -60,8 +56,6 @@ import { FilamentTypesModule } from './filamentTypes/filamentTypes.module';
     StripeModule,
     DiscountsModule,
     AvailableColorsModule,
-    PowdercoatColorsModule,
-    PowdercoatServiceModule,
     GroupsModule,
     VariationModule,
     PartsModule,
@@ -71,9 +65,7 @@ import { FilamentTypesModule } from './filamentTypes/filamentTypes.module';
     CartModule,
     MailModule,
     SchedulerModule,
-    BlogModule,
     NotificationModule,
-    BikeModelsModule,
     FilamentTypesModule,
   ],
   controllers: [AppController],

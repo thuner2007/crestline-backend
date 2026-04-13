@@ -3,7 +3,6 @@ import { PartsController } from './parts.controller';
 import { PartsService } from './parts.service';
 import { MinioService } from 'src/storage/minio.service';
 import { PrismaService } from 'prisma/prisma.service';
-import { PowdercoatColorsService } from 'src/powdercoatColors/powdercoatColors.service';
 
 @Module({
   controllers: [PartsController],
@@ -11,7 +10,6 @@ import { PowdercoatColorsService } from 'src/powdercoatColors/powdercoatColors.s
     PartsService,
     MinioService,
     PrismaService,
-    PowdercoatColorsService,
   ],
   exports: [PartsService],
 })

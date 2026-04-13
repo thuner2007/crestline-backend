@@ -171,31 +171,16 @@ const WEIGHTED_ORDER_STATUSES: sticker_order_status_enum[] = [
   ...Array(10).fill(sticker_order_status_enum.stand),
 ];
 
-const POWDERCOAT_COLORS = [
-  'RAL 9005 Jet Black',
-  'RAL 9010 Pure White',
-  'RAL 3020 Traffic Red',
-  'RAL 5015 Sky Blue',
-  'RAL 6018 Yellow Green',
-  'RAL 1021 Rape Yellow',
-  'RAL 7016 Anthracite Grey',
-  'RAL 8017 Chocolate Brown',
-];
-
 async function main() {
   console.log('Starting order seeding...');
 
   // Load existing data
   const stickers = await prisma.sticker.findMany({ where: { active: true } });
   const parts = await prisma.part.findMany({ where: { active: true } });
-  const powdercoatServices = await prisma.powdercoating_service.findMany({
-    where: { active: true },
-  });
   const users = await prisma.user.findMany();
 
   console.log(
-    `Found ${stickers.length} stickers, ${parts.length} parts, ` +
-      `${powdercoatServices.length} powdercoat services, ${users.length} users`,
+    `Found ${stickers.length} stickers, ${parts.length} parts, ${users.length} users`,
   );
 
   const ORDER_COUNT = 120;
@@ -232,12 +217,6 @@ async function main() {
     }[] = [];
     const partItemsData: {
       partId?: string;
-      quantity: number;
-      customizationOptions: object;
-    }[] = [];
-    const powdercoatItemsData: {
-      powdercoatingServiceId?: string;
-      color: string;
       quantity: number;
       customizationOptions: object;
     }[] = [];
@@ -290,24 +269,10 @@ async function main() {
       }
     }
 
-    // Add powdercoat items (0-1)
-    if (powdercoatServices.length > 0 && Math.random() > 0.7) {
-      const service = getRandomItem(powdercoatServices);
-      const quantity = getRandomInt(1, 2);
-      itemTotal += Number(service.price) * quantity;
-      powdercoatItemsData.push({
-        powdercoatingServiceId: service.id,
-        color: getRandomItem(POWDERCOAT_COLORS),
-        quantity,
-        customizationOptions: {},
-      });
-    }
-
     // Ensure at least one item
     if (
       stickerItemsData.length === 0 &&
       partItemsData.length === 0 &&
-      powdercoatItemsData.length === 0 &&
       stickers.length > 0
     ) {
       const sticker = getRandomItem(stickers);
@@ -365,14 +330,6 @@ async function main() {
         partItems: {
           create: partItemsData.map((item) => ({
             partId: item.partId,
-            quantity: item.quantity,
-            customizationOptions: item.customizationOptions,
-          })),
-        },
-        powdercoatItems: {
-          create: powdercoatItemsData.map((item) => ({
-            powdercoatingServiceId: item.powdercoatingServiceId,
-            color: item.color,
             quantity: item.quantity,
             customizationOptions: item.customizationOptions,
           })),

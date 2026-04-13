@@ -123,7 +123,6 @@ export class PartsService {
         translations: true,
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
-        bikeModels: true,
         filamentTypes: {
           include: {
             colors: { where: { active: true } },
@@ -227,7 +226,6 @@ export class PartsService {
         translations: true,
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
-        bikeModels: true,
         filamentTypes: {
           include: {
             colors: { where: { active: true } },
@@ -361,7 +359,6 @@ export class PartsService {
     limit?: number;
     skip?: number;
     groupIds?: string[];
-    bikeModelId?: string;
     random?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -371,7 +368,6 @@ export class PartsService {
       limit = 20,
       skip = 0,
       groupIds,
-      bikeModelId,
       random = false,
       sortBy = 'sortingRank',
       sortOrder = 'asc',
@@ -390,62 +386,6 @@ export class PartsService {
       where.groups = { some: { id: { in: groupIds } } };
     }
 
-    // Special handling for bike model filtering
-    if (bikeModelId) {
-      // Get total count for pagination (all parts matching other filters)
-      const total = await this.prisma.part.count({ where });
-
-      // Build the query options
-      const queryOptions: any = {
-        where,
-        include: {
-          translations: true,
-          groups: { include: { translations: true } },
-          links: { include: { translations: true } },
-          accessories: { include: { translations: true } },
-          bikeModels: true,
-          filamentTypes: {
-            include: {
-              colors: { where: { active: true } },
-            },
-          },
-        },
-      };
-
-      // Fetch all parts matching the base criteria
-      const allParts = await this.prisma.part.findMany(queryOptions);
-
-      // Sort parts: those with the specified bike model first, then others
-      const partsWithBikeModel = allParts.filter((part: any) =>
-        part.bikeModels?.some((bm: any) => bm.id === bikeModelId),
-      );
-      const partsWithoutBikeModel = allParts.filter(
-        (part: any) =>
-          !part.bikeModels?.some((bm: any) => bm.id === bikeModelId),
-      );
-
-      // Apply sorting to each group
-      const sortFn = (a: any, b: any) => {
-        const aVal = a[sortBy] || 0;
-        const bVal = b[sortBy] || 0;
-        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-      };
-
-      partsWithBikeModel.sort(sortFn);
-      partsWithoutBikeModel.sort(sortFn);
-
-      // Combine the arrays
-      const sortedParts = [...partsWithBikeModel, ...partsWithoutBikeModel];
-
-      // Apply pagination
-      const paginatedParts = sortedParts.slice(skip, skip + limit);
-
-      return {
-        data: paginatedParts,
-        meta: { total, limit, skip, totalPages: Math.ceil(total / limit) },
-      };
-    }
-
     // Get total count for pagination
     const total = await this.prisma.part.count({ where });
 
@@ -457,7 +397,6 @@ export class PartsService {
         groups: { include: { translations: true } },
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
-        bikeModels: true,
         filamentTypes: {
           include: {
             colors: { where: { active: true } },
@@ -545,7 +484,6 @@ export class PartsService {
     limit?: number;
     skip?: number;
     groupIds?: string[];
-    bikeModelId?: string;
     random?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -555,7 +493,6 @@ export class PartsService {
       limit = 20,
       skip = 0,
       groupIds,
-      bikeModelId,
       random = false,
       sortBy = 'sortingRank',
       sortOrder = 'asc',
@@ -574,100 +511,6 @@ export class PartsService {
       where.groups = { some: { id: { in: groupIds } } };
     }
 
-    // Special handling for bike model filtering
-    if (bikeModelId) {
-      // Get total count for pagination (all parts matching other filters)
-      const total = await this.prisma.part.count({ where });
-
-      // Build the query options
-      const queryOptions: any = {
-        where,
-        include: {
-          translations: true,
-          groups: { include: { translations: true } },
-          optionStocks: true, // Include stock information
-          links: { include: { translations: true } },
-          accessories: { include: { translations: true } },
-          bikeModels: true,
-        },
-      };
-
-      // Fetch all parts matching the base criteria
-      const allParts = await this.prisma.part.findMany(queryOptions);
-
-      // Sort parts: those with the specified bike model first, then others
-      const partsWithBikeModel = allParts.filter((part: any) =>
-        part.bikeModels?.some((bm: any) => bm.id === bikeModelId),
-      );
-      const partsWithoutBikeModel = allParts.filter(
-        (part: any) =>
-          !part.bikeModels?.some((bm: any) => bm.id === bikeModelId),
-      );
-
-      // Apply sorting to each group
-      const sortFn = (a: any, b: any) => {
-        const aVal = a[sortBy] || 0;
-        const bVal = b[sortBy] || 0;
-        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-      };
-
-      partsWithBikeModel.sort(sortFn);
-      partsWithoutBikeModel.sort(sortFn);
-
-      // Combine the arrays
-      const sortedParts = [...partsWithBikeModel, ...partsWithoutBikeModel];
-
-      // Apply pagination
-      const parts = sortedParts.slice(skip, skip + limit);
-
-      // Enhance each part with stock information in the customization options
-      const partsWithStock = await Promise.all(
-        parts.map(async (part) => {
-          // Parse customization options
-          let customizationOptions = part.customizationOptions;
-          if (typeof customizationOptions === 'string') {
-            try {
-              customizationOptions = JSON.parse(customizationOptions);
-            } catch (error) {
-              console.error('Failed to parse customization options:', error);
-            }
-          }
-
-          // Enhance dropdown options with stock information
-          if (
-            customizationOptions &&
-            typeof customizationOptions === 'object' &&
-            'options' in customizationOptions
-          ) {
-            const opts = customizationOptions as any;
-            opts.options = opts.options.map((option: any) => {
-              if (option.type === 'dropdown' && option.items) {
-                const optionStocks =
-                  (part as any).optionStocks?.filter(
-                    (stock: any) => stock.optionId === option.id,
-                  ) || [];
-                option.items = option.items.map((item: any) => {
-                  const stockInfo = optionStocks.find(
-                    (stock: any) => stock.optionItemId === item.id,
-                  );
-                  return { ...item, stock: stockInfo?.quantity || 0 };
-                });
-              }
-              return option;
-            });
-            customizationOptions = opts;
-          }
-
-          return { ...part, customizationOptions };
-        }),
-      );
-
-      return {
-        data: partsWithStock,
-        meta: { total, limit, skip, totalPages: Math.ceil(total / limit) },
-      };
-    }
-
     // Get total count for pagination
     const total = await this.prisma.part.count({ where });
 
@@ -680,7 +523,6 @@ export class PartsService {
         optionStocks: true, // Include stock information
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
-        bikeModels: true,
         filamentTypes: {
           include: {
             colors: { where: { active: true } },
@@ -917,7 +759,6 @@ export class PartsService {
             translations: true,
             groups: true,
             links: { include: { translations: true } },
-            bikeModels: true,
           },
         },
       },
@@ -943,7 +784,6 @@ export class PartsService {
             translations: true,
             groups: true,
             links: { include: { translations: true } },
-            bikeModels: true,
           },
         },
       },
@@ -968,68 +808,6 @@ export class PartsService {
       }, {}),
       parts: partGroup.parts,
     };
-  }
-
-  async findAllByBikeModelId(bikeModelId: string): Promise<any> {
-    // Verify the bike model exists
-    const bikeModel = await this.prisma.bike_model.findUnique({
-      where: { id: bikeModelId },
-    });
-
-    if (!bikeModel) {
-      throw new NotFoundException(
-        `Bike Model with ID ${bikeModelId} not found`,
-      );
-    }
-
-    // Get all parts that have this bike model associated
-    const parts = await this.prisma.part.findMany({
-      where: {
-        bikeModels: {
-          some: {
-            id: bikeModelId,
-          },
-        },
-      },
-      include: {
-        translations: true,
-        groups: { include: { translations: true } },
-        links: { include: { translations: true } },
-        accessories: { include: { translations: true } },
-        bikeModels: true,
-        filamentTypes: {
-          include: {
-            colors: { where: { active: true } },
-          },
-        },
-      },
-      orderBy: {
-        sortingRank: 'asc',
-      },
-    });
-
-    // Enhance parts with filament colors
-    const enhancedParts = await Promise.all(
-      parts.map(async (part) => {
-        // Parse customizationOptions if it's a string
-        if (typeof part.customizationOptions === 'string') {
-          try {
-            part.customizationOptions = JSON.parse(part.customizationOptions);
-          } catch (error) {
-            console.error('Error parsing customizationOptions:', error);
-          }
-        }
-
-        // Enhance customizationOptions with filament colors if needed
-        part.customizationOptions = await this.enhanceFilamentColorOptions(
-          part.customizationOptions,
-        );
-
-        return part;
-      }),
-    );
-
-    return enhancedParts;
   }
 
   // Stock management for dropdown options
@@ -1192,45 +970,6 @@ export class PartsService {
     });
   }
 
-  async setBikeModels(partId: string, bikeModelIds: string[]): Promise<any> {
-    // Verify the main part exists
-    await this.findOne(partId, false);
-
-    // Verify all bike models exist
-    for (const bikeModelId of bikeModelIds) {
-      const bikeModel = await this.prisma.bike_model.findUnique({
-        where: { id: bikeModelId },
-      });
-      if (!bikeModel) {
-        throw new NotFoundException(
-          `Bike model with ID ${bikeModelId} not found`,
-        );
-      }
-    }
-
-    // Update the part with new bike models (replaces existing)
-    return await this.prisma.part.update({
-      where: { id: partId },
-      data: {
-        bikeModels: {
-          set: bikeModelIds.map((id) => ({ id })),
-        },
-      },
-      include: {
-        groups: true,
-        translations: true,
-        links: { include: { translations: true } },
-        accessories: { include: { translations: true } },
-        bikeModels: true,
-        filamentTypes: {
-          include: {
-            colors: { where: { active: true } },
-          },
-        },
-      },
-    });
-  }
-
   async setFilamentTypes(
     partId: string,
     filamentTypeIds: string[],
@@ -1263,7 +1002,6 @@ export class PartsService {
         translations: true,
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
-        bikeModels: true,
         filamentTypes: {
           include: {
             colors: { where: { active: true } },

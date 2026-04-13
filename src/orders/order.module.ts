@@ -5,7 +5,6 @@ import { InvoiceService } from './invoice.service';
 import { DiscountsModule } from 'src/discounts/discount.module';
 import { PartsModule } from 'src/parts/parts.module';
 import { MailModule } from 'src/mail/mail.module';
-import { PowdercoatServiceModule } from 'src/powdercoatService/powdercoatService.module';
 import { NotificationModule } from 'src/notifications/notification.module';
 import { PrismaService } from 'prisma/prisma.service';
 import { MinioService } from 'src/storage/minio.service';
@@ -17,7 +16,6 @@ import { PostService } from './post.service';
     DiscountsModule,
     PartsModule,
     MailModule,
-    PowdercoatServiceModule,
     NotificationModule,
   ],
   controllers: [StickerOrderController],

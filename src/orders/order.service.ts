@@ -10,13 +10,11 @@ import {
   CreateStickerOrderDto,
   OrderItemDto,
   PartOrderItemDto,
-  PowdercoatServiceOrderItemDto,
   UpdateStatusDto,
   ShippingAddressDto,
 } from './dto/order.dto';
 import { DiscountService } from 'src/discounts/discount.service';
 import { PartsService } from 'src/parts/parts.service';
-import { PowdercoatServiceService } from 'src/powdercoatService/powdercoatService.service';
 import { MailService } from 'src/mail/mail.service';
 import { NotificationService } from 'src/notifications/notification.service';
 import { UpsService } from './ups.service';
@@ -63,7 +61,6 @@ export class StickerOrderService {
     private readonly prisma: PrismaService,
     private readonly discountService: DiscountService,
     private readonly partsService: PartsService,
-    private readonly powdercoatServiceService: PowdercoatServiceService,
     private readonly mailService: MailService,
     private readonly notificationService: NotificationService,
     private readonly upsService: UpsService,
@@ -79,7 +76,6 @@ export class StickerOrderService {
       guestEmail,
       orderItems,
       partOrderItems = [],
-      powdercoatServiceOrderItems = [],
       shipmentCost: providedShipmentCost,
       shipmentCarrier,
       ...orderData
@@ -157,11 +153,6 @@ export class StickerOrderService {
       }
     }
 
-    // If there are any powdercoat service items, ensure minimum shipping is shippingCostBig
-    if (powdercoatServiceOrderItems.length > 0) {
-      shippingCost = Math.max(shippingCost, this.priceSettings.shippingCostBig);
-    }
-
     // If the caller pre-calculated the shipping cost (e.g. via calculatePrice which uses
     // UPS/Swiss Post APIs for international orders), use that value directly so the stored
     // shipmentCost matches what was actually charged via Stripe.
@@ -199,16 +190,6 @@ export class StickerOrderService {
       } else {
         partsWithoutInitialPrice += itemPrice;
       }
-    }
-
-    // Calculate price of each powdercoat service item
-    let powdercoatServicesPrice = 0;
-    for (const item of powdercoatServiceOrderItems) {
-      const service = await this.powdercoatServiceService.findOne(
-        item.powdercoatingServiceId,
-      );
-      const itemPrice = Number(service.price) * item.quantity;
-      powdercoatServicesPrice += itemPrice;
     }
 
     // Calculate total items price - initially use normal prices for all items
@@ -261,18 +242,9 @@ export class StickerOrderService {
           );
         partsDiscountAmount += partsWithoutInitialPriceDiscount;
 
-        // Calculate discount amount for powdercoat services
-        const powdercoatServicesDiscountAmount =
-          this.discountService.calculateDiscountAmount(
-            powdercoatServicesPrice,
-            validatedDiscount.type,
-            validatedDiscount.value,
-          );
-
         finalDiscountAmount =
           stickersDiscountAmount +
-          partsDiscountAmount +
-          powdercoatServicesDiscountAmount;
+          partsDiscountAmount;
         discountAmount = finalDiscountAmount;
       } else {
         // For fixed discounts, use best prices for parts (initial vs current)
@@ -293,11 +265,9 @@ export class StickerOrderService {
         // Add parts without initial prices at normal price
         optimizedPartsPrice += partsWithoutInitialPrice;
 
-        // Update finalPartsPrice to use optimized pricing
-
         // Calculate fixed discount amount on the optimized total
         const optimizedTotalItemsPrice =
-          stickersPrice + optimizedPartsPrice + powdercoatServicesPrice;
+          stickersPrice + optimizedPartsPrice;
 
         finalDiscountAmount = this.discountService.calculateDiscountAmount(
           optimizedTotalItemsPrice,
@@ -312,8 +282,7 @@ export class StickerOrderService {
     }
 
     // Calculate final price using original prices, then subtract discount
-    const finalTotalItemsPrice =
-      stickersPrice + partsPrice + powdercoatServicesPrice;
+    const finalTotalItemsPrice = stickersPrice + partsPrice;
 
     // Subtract the discount amount from total items price
     const discountedItemsPrice = finalTotalItemsPrice - discountAmount;
@@ -421,17 +390,6 @@ export class StickerOrderService {
         }),
       );
 
-      // Prepare powdercoat service order items
-      const powdercoatServiceOrderItemsData = powdercoatServiceOrderItems.map(
-        (item) => {
-          return {
-            powdercoatingServiceId: item.powdercoatingServiceId,
-            quantity: item.quantity,
-            color: item.color || null,
-          };
-        },
-      );
-
       // Create order with all related data
       const order = await this.prisma.sticker_order.create({
         data: {
@@ -481,11 +439,6 @@ export class StickerOrderService {
           partItems: {
             create: partOrderItemsData,
           },
-
-          // Create powdercoat service order items
-          powdercoatItems: {
-            create: powdercoatServiceOrderItemsData,
-          },
         },
         include: {
           items: {
@@ -505,11 +458,6 @@ export class StickerOrderService {
                   translations: true,
                 },
               },
-            },
-          },
-          powdercoatItems: {
-            include: {
-              powdercoatingService: true,
             },
           },
           discount: true,
@@ -613,11 +561,6 @@ export class StickerOrderService {
             },
           },
         },
-        powdercoatItems: {
-          include: {
-            powdercoatingService: true,
-          },
-        },
         discount: true,
       },
     });
@@ -715,9 +658,6 @@ export class StickerOrderService {
         include: {
           part: { include: { translations: true } },
         },
-      },
-      powdercoatItems: {
-        include: { powdercoatingService: true },
       },
       discount: true,
     };
@@ -862,11 +802,6 @@ export class StickerOrderService {
             },
           },
         },
-        powdercoatItems: {
-          include: {
-            powdercoatingService: true,
-          },
-        },
         discount: true,
         user: {
           select: {
@@ -983,11 +918,6 @@ export class StickerOrderService {
             },
           },
         },
-        powdercoatItems: {
-          include: {
-            powdercoatingService: true,
-          },
-        },
       },
     });
 
@@ -1021,11 +951,6 @@ export class StickerOrderService {
                 translations: true,
               },
             },
-          },
-        },
-        powdercoatItems: {
-          include: {
-            powdercoatingService: true,
           },
         },
       },
@@ -1125,17 +1050,6 @@ export class StickerOrderService {
                 ? JSON.parse(item.customizationOptions)
                 : item.customizationOptions,
           })),
-          powdercoatServiceOrderItems:
-            updatedOrder.powdercoatItems?.map((item) => ({
-              quantity: item.quantity,
-              powdercoatingServiceId: item.powdercoatingServiceId,
-              powdercoatingServiceName:
-                item.powdercoatingService?.name || undefined,
-              customizationOptions:
-                typeof item.customizationOptions === 'string'
-                  ? JSON.parse(item.customizationOptions)
-                  : item.customizationOptions,
-            })) || [],
         });
         this.logger.log(
           `Order confirmation email sent to: ${customerEmail} for order ${updatedOrder.id}`,
@@ -1161,7 +1075,6 @@ export class StickerOrderService {
   async calculatePrice(
     orderItems: OrderItemDto[],
     partOrderItems: PartOrderItemDto[] = [],
-    powdercoatServiceOrderItems: PowdercoatServiceOrderItemDto[] = [],
     discountCode?: string,
     shippingAddress?: ShippingAddressDto,
   ) {
@@ -1175,7 +1088,6 @@ export class StickerOrderService {
     let selectedCarrier: shipping_carrier_enum | null = null;
     let stickersPrice = 0;
     let partsPrice = 0;
-    let powdercoatServicesPrice = 0;
 
     if (discountCode) {
       validatedDiscount = await this.discountService.validateCode(
@@ -1187,13 +1099,6 @@ export class StickerOrderService {
     // Check if shipping address is international (not Switzerland)
     const isInternational =
       shippingAddress && shippingAddress.country.toUpperCase() !== 'CH';
-
-    // Powdercoat services are only available in Switzerland
-    if (isInternational && powdercoatServiceOrderItems.length > 0) {
-      throw new BadRequestException(
-        'Powdercoat services are only available for Swiss addresses',
-      );
-    }
 
     // Calculate shipping cost
     if (isInternational) {
@@ -1486,11 +1391,6 @@ export class StickerOrderService {
         }
       }
 
-      // Powdercoat items always require parcel shipping
-      if (powdercoatServiceOrderItems.length > 0) {
-        isDomesticLetter = false;
-      }
-
       if (isDomesticLetter) {
         // Add packaging weight for the envelope/padded bag
         domesticLetterWeightKg += this.priceSettings.packagingWeightLetterKg;
@@ -1647,24 +1547,6 @@ export class StickerOrderService {
       }
     }
 
-    // Calculate price of each powdercoat service item
-    for (const item of powdercoatServiceOrderItems) {
-      try {
-        const powdercoatService = await this.powdercoatServiceService.findOne(
-          item.powdercoatingServiceId,
-        );
-        powdercoatServicesPrice +=
-          Number(powdercoatService.price) * item.quantity;
-      } catch (error) {
-        this.logger.error(
-          `Error calculating price for powdercoat service ${item.powdercoatingServiceId}: ${error.message}`,
-        );
-        throw new NotFoundException(
-          `Powdercoat service with ID ${item.powdercoatingServiceId} not found`,
-        );
-      }
-    }
-
     // Calculate total items price - initially use normal prices for all parts
     let finalDiscountAmount = 0;
 
@@ -1715,18 +1597,9 @@ export class StickerOrderService {
           );
         partsDiscountAmount += partsWithoutInitialPriceDiscount;
 
-        // Calculate discount amount for powdercoat services
-        const powdercoatServicesDiscountAmount =
-          this.discountService.calculateDiscountAmount(
-            powdercoatServicesPrice,
-            validatedDiscount.type,
-            validatedDiscount.value,
-          );
-
         finalDiscountAmount =
           stickersDiscountAmount +
-          partsDiscountAmount +
-          powdercoatServicesDiscountAmount;
+          partsDiscountAmount;
         discountAmount = finalDiscountAmount;
       } else {
         // For fixed discounts, use best prices for parts (initial vs current)
@@ -1749,7 +1622,7 @@ export class StickerOrderService {
 
         // Calculate fixed discount amount on the optimized total
         const optimizedTotalItemsPrice =
-          stickersPrice + optimizedPartsPrice + powdercoatServicesPrice;
+          stickersPrice + optimizedPartsPrice;
 
         finalDiscountAmount = this.discountService.calculateDiscountAmount(
           optimizedTotalItemsPrice,
@@ -1764,8 +1637,7 @@ export class StickerOrderService {
     }
 
     // Calculate final price using original prices, then subtract discount
-    const finalTotalItemsPrice =
-      stickersPrice + partsPrice + powdercoatServicesPrice;
+    const finalTotalItemsPrice = stickersPrice + partsPrice;
 
     // Subtract the discount amount from total items price
     const discountedItemsPrice = finalTotalItemsPrice - discountAmount;
@@ -1792,7 +1664,6 @@ export class StickerOrderService {
       selectedCarrier,
       stickersPrice,
       partsPrice,
-      powdercoatServicesPrice,
       codeDiscount: discountAmount,
       discountCode: discountCode,
       freeShippingThreshold: this.priceSettings.freeShippingThreshold,

@@ -35,8 +35,6 @@ npm run seed:groups
 npm run seed:stickers
 npm run seed:parts
 npm run seed:users
-npm run seed:powdercoat
-npm run seed:blog
 npm run seed:orders
 ```
 

@@ -25,8 +25,6 @@
     "seed:parts": "ts-node prisma/seeds/parts.seed.ts",
     "seed:users": "ts-node prisma/seeds/user.seed.ts",
     "seed:groups": "ts-node prisma/seeds/group.seed.ts",
-    "seed:powdercoat": "ts-node prisma/seeds/powdercoatService.seed.ts",
-    "seed:blog": "ts-node prisma/seeds/blog.seed.ts",
     "seed:orders": "ts-node prisma/seeds/order.seed.ts",
     "compile:seeds": "tsc prisma/seeds/*.ts --outDir dist/seeds --esModuleInterop true --target es2020 --module commonjs"
   },

@@ -22,7 +22,6 @@ import {
   UpdateShippingDateDto,
   UpdateOptionStockDto,
 } from './dto/part.dto';
-import { PowdercoatColorsService } from 'src/powdercoatColors/powdercoatColors.service';
 
 // Multer file type declaration for compatibility with @types/express v5
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -54,7 +53,6 @@ export class PartsController {
   constructor(
     private readonly partsService: PartsService,
     private readonly minioService: MinioService,
-    private readonly powdercoatColorsService: PowdercoatColorsService,
   ) {}
 
   @Post()
@@ -259,12 +257,6 @@ export class PartsController {
   }
 
   @Public()
-  @Get('powdercoat-colors')
-  async getPowdercoatColors(): Promise<string[]> {
-    return this.powdercoatColorsService.getAllColors();
-  }
-
-  @Public()
   @Get()
   async findAll(
     @Query('status') status?: 'active' | 'inactive' | 'all',
@@ -273,7 +265,6 @@ export class PartsController {
     @Query('limit') limitParam?: string,
     @Query('skip') skipParam?: string,
     @Query('groupIds') groupIds?: string,
-    @Query('bikeModelId') bikeModelId?: string,
     @Query('random') random?: boolean,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
@@ -298,7 +289,6 @@ export class PartsController {
       limit,
       skip,
       groupIds: parsedGroupIds,
-      bikeModelId,
       random: random === true,
       sortBy: sortBy || 'sortingRank',
       sortOrder: sortOrder || 'asc',
@@ -312,7 +302,6 @@ export class PartsController {
     @Query('amount') amount?: string,
     @Query('start') start?: string,
     @Query('groupIds') groupIds?: string,
-    @Query('bikeModelId') bikeModelId?: string,
     @Query('random') random?: boolean,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
@@ -329,7 +318,6 @@ export class PartsController {
       limit,
       skip,
       groupIds: parsedGroupIds,
-      bikeModelId,
       random: random === true,
       sortBy: sortBy || 'sortingRank',
       sortOrder: sortOrder || 'asc',
@@ -399,12 +387,6 @@ export class PartsController {
   @Get('partGroup/:groupId')
   async findAllByGroupId(@Param('groupId') groupId: string) {
     return this.partsService.findAllByGroupId(groupId);
-  }
-
-  @Public()
-  @Get('bike-model/:bikeModelId')
-  async findAllByBikeModelId(@Param('bikeModelId') bikeModelId: string) {
-    return this.partsService.findAllByBikeModelId(bikeModelId);
   }
 
   @Roles(UserRole.ADMIN)
@@ -707,20 +689,6 @@ export class PartsController {
       );
     }
     return this.partsService.setAccessories(partId, body.accessoryIds);
-  }
-
-  @Post(':id/bike-models')
-  @Roles(UserRole.ADMIN)
-  async setBikeModels(
-    @Param('id') partId: string,
-    @Body() body: { bikeModelIds: string[] },
-  ): Promise<any> {
-    if (!body.bikeModelIds || !Array.isArray(body.bikeModelIds)) {
-      throw new BadRequestException(
-        'bikeModelIds must be provided as an array',
-      );
-    }
-    return this.partsService.setBikeModels(partId, body.bikeModelIds);
   }
 
   @Post(':id/filament-types')
