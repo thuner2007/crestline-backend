@@ -242,9 +242,7 @@ export class StickerOrderService {
           );
         partsDiscountAmount += partsWithoutInitialPriceDiscount;
 
-        finalDiscountAmount =
-          stickersDiscountAmount +
-          partsDiscountAmount;
+        finalDiscountAmount = stickersDiscountAmount + partsDiscountAmount;
         discountAmount = finalDiscountAmount;
       } else {
         // For fixed discounts, use best prices for parts (initial vs current)
@@ -266,8 +264,7 @@ export class StickerOrderService {
         optimizedPartsPrice += partsWithoutInitialPrice;
 
         // Calculate fixed discount amount on the optimized total
-        const optimizedTotalItemsPrice =
-          stickersPrice + optimizedPartsPrice;
+        const optimizedTotalItemsPrice = stickersPrice + optimizedPartsPrice;
 
         finalDiscountAmount = this.discountService.calculateDiscountAmount(
           optimizedTotalItemsPrice,
@@ -1597,9 +1594,7 @@ export class StickerOrderService {
           );
         partsDiscountAmount += partsWithoutInitialPriceDiscount;
 
-        finalDiscountAmount =
-          stickersDiscountAmount +
-          partsDiscountAmount;
+        finalDiscountAmount = stickersDiscountAmount + partsDiscountAmount;
         discountAmount = finalDiscountAmount;
       } else {
         // For fixed discounts, use best prices for parts (initial vs current)
@@ -1621,8 +1616,7 @@ export class StickerOrderService {
         optimizedPartsPrice += partsWithoutInitialPrice;
 
         // Calculate fixed discount amount on the optimized total
-        const optimizedTotalItemsPrice =
-          stickersPrice + optimizedPartsPrice;
+        const optimizedTotalItemsPrice = stickersPrice + optimizedPartsPrice;
 
         finalDiscountAmount = this.discountService.calculateDiscountAmount(
           optimizedTotalItemsPrice,

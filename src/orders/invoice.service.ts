@@ -26,11 +26,6 @@ export class InvoiceService {
             },
           },
         },
-        powdercoatItems: {
-          include: {
-            powdercoatingService: true,
-          },
-        },
         discount: true,
       },
     });
@@ -48,13 +43,6 @@ export class InvoiceService {
     }));
 
     const partItems = order.partItems.map((item) => ({
-      ...item,
-      customizationOptions: (typeof item.customizationOptions === 'string'
-        ? JSON.parse(item.customizationOptions as string)
-        : item.customizationOptions) as Array<{ type: string; value: string }>,
-    }));
-
-    const powdercoatItems = order.powdercoatItems.map((item) => ({
       ...item,
       customizationOptions: (typeof item.customizationOptions === 'string'
         ? JSON.parse(item.customizationOptions as string)
@@ -341,51 +329,6 @@ export class InvoiceService {
             width: pt(110),
           });
           yPos += pt(3.5);
-        }
-
-        doc.fillColor([0, 0, 0]).fontSize(9);
-        const priceY = yPos - (customOpts.length > 0 ? pt(3.5) : 0);
-        rightAlignText(item.quantity.toString(), pt(130), priceY);
-        rightAlignText(`CHF ${unitPrice.toFixed(2)}`, pt(150), priceY);
-        rightAlignText(`CHF ${itemPrice.toFixed(2)}`, pt(188), priceY);
-
-        subtotalBeforeDiscount += itemPrice;
-        yPos += pt(8);
-        itemNumber++;
-      });
-
-      // --- Powdercoat items ---
-      powdercoatItems.forEach((item) => {
-        checkNewPage(pt(25));
-
-        const itemTitle =
-          (item.powdercoatingService as any)?.name || 'Powdercoat Service';
-        const unitPrice = parseFloat(
-          (item.powdercoatingService as any)?.price?.toString() || '0',
-        );
-        const itemPrice = unitPrice * item.quantity;
-
-        doc.font('Helvetica-Bold').fontSize(9).fillColor([0, 0, 0]);
-        doc.text(`${itemNumber}. ${itemTitle}`, margin + 2, yPos, {
-          lineBreak: false,
-        });
-        yPos += pt(4);
-
-        doc.font('Helvetica').fontSize(8).fillColor([80, 80, 80]);
-        doc.text(`Color: ${item.color || ''}`, margin + 5, yPos, {
-          lineBreak: false,
-        });
-
-        const customOpts = item.customizationOptions || [];
-        if (customOpts.length > 0) {
-          yPos += pt(3.5);
-          const customText = customOpts
-            .map((opt) => `${opt.type}: ${opt.value}`)
-            .join(', ');
-          doc.text(customText, margin + 5, yPos, {
-            lineBreak: false,
-            width: pt(110),
-          });
         }
 
         doc.fillColor([0, 0, 0]).fontSize(9);

@@ -37,7 +37,7 @@ import { MailController } from './mail.controller';
             },
           },
           defaults: {
-            from: '"Revsticks" <info@revsticks.ch>',
+            from: `"Crestline Customs" <${smtpUser}>`,
           },
         };
       },

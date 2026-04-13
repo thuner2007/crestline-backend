@@ -21,10 +21,8 @@
     "typeorm": "ts-node ./node_modules/typeorm/cli",
     "migration:generate": "npm run typeorm migration:generate -- -d src/typeorm.config.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/typeorm.config.ts",
-    "seed:stickers": "ts-node prisma/seeds/sticker.seed.ts",
     "seed:parts": "ts-node prisma/seeds/parts.seed.ts",
     "seed:users": "ts-node prisma/seeds/user.seed.ts",
-    "seed:groups": "ts-node prisma/seeds/group.seed.ts",
     "seed:orders": "ts-node prisma/seeds/order.seed.ts",
     "compile:seeds": "tsc prisma/seeds/*.ts --outDir dist/seeds --esModuleInterop true --target es2020 --module commonjs"
   },

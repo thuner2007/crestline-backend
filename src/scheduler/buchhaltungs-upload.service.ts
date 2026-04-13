@@ -39,10 +39,6 @@ export class BuchhaltungsUploadService implements OnModuleInit {
       quantity: number;
       part?: { translations?: { title: string }[] } | null;
     }[];
-    powdercoatItems?: {
-      quantity: number;
-      powdercoatingService?: { name: string } | null;
-    }[];
   }): string {
     const items: string[] = [];
 
@@ -63,14 +59,6 @@ export class BuchhaltungsUploadService implements OnModuleInit {
     if (order.partItems) {
       for (const item of order.partItems) {
         const name = item.part?.translations?.[0]?.title || 'Part';
-        items.push(`${item.quantity}x ${name}`);
-      }
-    }
-
-    // Add powdercoat items
-    if (order.powdercoatItems) {
-      for (const item of order.powdercoatItems) {
-        const name = item.powdercoatingService?.name || 'Powdercoating Service';
         items.push(`${item.quantity}x ${name}`);
       }
     }
@@ -149,11 +137,6 @@ export class BuchhaltungsUploadService implements OnModuleInit {
                   },
                 },
               },
-            },
-          },
-          powdercoatItems: {
-            include: {
-              powdercoatingService: true,
             },
           },
         },

@@ -25,7 +25,7 @@ export class MailService {
       imageUrl = `https://minio-api.cwx-dev.com/${bucketName}/${mainImage}`;
     }
 
-    return `<img src="${imageUrl}" alt="${fallbackAlt}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; margin-right: 10px; vertical-align: middle;" />`;
+    return `<img src="${imageUrl}" alt="${fallbackAlt}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 0; display: block;" />`;
   }
 
   private formatCustomizationOptions(customizationOptions: any): string {
@@ -331,7 +331,7 @@ export class MailService {
       .map((item) => {
         const dimensions =
           item.width && item.height ? `(${item.width}x${item.height}cm)` : '';
-        const type = item.vinyl ? '- Vinyl' : item.printed ? '- Bedruckt' : '';
+        const type = item.vinyl ? '— Vinyl' : item.printed ? '— Bedruckt' : '';
         const name =
           item.stickerName || (item.stickerId ? 'Sticker' : 'Custom Sticker');
         const customizations = this.formatCustomizationOptions(
@@ -344,12 +344,20 @@ export class MailService {
         );
 
         return `
-          <li style="margin-bottom: 15px; display: flex; align-items: center;">
-            ${imageHtml}
-            <div>
-              <strong>${item.quantity}x ${name}</strong> ${dimensions} ${type}${customizations}
-            </div>
-          </li>`;
+          <tr>
+            <td style="padding: 14px 0; border-bottom: 1px solid #27272a; vertical-align: middle;">
+              <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                <tr>
+                  <td style="width: 70px; vertical-align: middle; padding-right: 14px;">${imageHtml}</td>
+                  <td style="vertical-align: middle;">
+                    <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff;">${item.quantity}x ${name}</span>
+                    ${dimensions || type ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a;">${dimensions} ${type}</span>` : ''}
+                    ${customizations ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #a1a1aa;">${customizations}</span>` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
       })
       .join('');
 
@@ -367,12 +375,19 @@ export class MailService {
           );
 
           return `
-            <li style="margin-bottom: 15px; display: flex; align-items: center;">
-              ${imageHtml}
-              <div>
-                <strong>${item.quantity}x ${partName}</strong>${customizations}
-              </div>
-            </li>`;
+          <tr>
+            <td style="padding: 14px 0; border-bottom: 1px solid #27272a; vertical-align: middle;">
+              <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                <tr>
+                  <td style="width: 70px; vertical-align: middle; padding-right: 14px;">${imageHtml}</td>
+                  <td style="vertical-align: middle;">
+                    <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff;">${item.quantity}x ${partName}</span>
+                    ${customizations ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #a1a1aa;">${customizations}</span>` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
         })
         .join('') || '';
 
@@ -387,11 +402,12 @@ export class MailService {
             `Pulverbeschichtung (ID: ${item.powdercoatingServiceId})`;
 
           return `
-            <li style="margin-bottom: 15px; display: flex; align-items: center;">
-              <div>
-                <strong>${item.quantity}x ${serviceName}</strong>${customizations}
-              </div>
-            </li>`;
+          <tr>
+            <td style="padding: 14px 0; border-bottom: 1px solid #27272a; vertical-align: middle;">
+              <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff;">${item.quantity}x ${serviceName}</span>
+              ${customizations ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #a1a1aa;">${customizations}</span>` : ''}
+            </td>
+          </tr>`;
         })
         .join('') || '';
 
@@ -400,76 +416,169 @@ export class MailService {
       orderData.powdercoatServiceOrderItems &&
       orderData.powdercoatServiceOrderItems.length > 0;
 
-    const subject = `Bestellbestätigung - Bestellung #${orderData.orderId}`;
+    const subject = `Bestellbestätigung — Bestellung #${orderData.orderId}`;
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #7e22ce; border-bottom: 2px solid #7e22ce; padding-bottom: 10px;">Vielen Dank für deine Bestellung bei Revsticks!</h2>
-        <p>Hallo ${customerName},</p>
-        <p>wir haben deine Bestellung erhalten und bearbeiten sie bereits.</p>
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; background-color: #09090b;">
 
-        <div style="background-color: #faf5ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #7e22ce;">
-          <h3 style="color: #7e22ce; margin-top: 0;">Bestelldetails:</h3>
-          <p><strong>Bestellnummer:</strong> ${orderData.orderId}</p>
-          <p><strong>Gesamtbetrag:</strong> CHF ${orderData.totalPrice.toFixed(2)}</p>
-        </div>
-        
-        <h3 style="color: #333;">Bestellte Artikel:</h3>
-        ${itemsHtml ? `<h4 style="color: #555; margin-bottom: 10px;">Sticker:</h4><ul style="list-style: none; padding: 0;">${itemsHtml}</ul>` : ''}
-        ${partsHtml ? `<h4 style="color: #555; margin-bottom: 10px;">Teile:</h4><ul style="list-style: none; padding: 0;">${partsHtml}</ul>` : ''}
-        ${powdercoatServicesHtml ? `<h4 style="color: #555; margin-bottom: 10px;">Pulverbeschichtung:</h4><ul style="list-style: none; padding: 0;">${powdercoatServicesHtml}</ul>` : ''}
-        
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #09090b; min-height: 100%;">
+  <tr>
+    <td align="center" style="padding: 40px 16px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; width: 100%;">
+
+        <!-- HEADER / LOGO -->
+        <tr>
+          <td style="padding-bottom: 40px;">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="width: 4px; background-color: #f59e0b; padding: 0;">&nbsp;</td>
+                <td style="padding-left: 14px;">
+                  <span style="font-family: 'Oswald', Impact, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #ffffff;">CRESTLINE <span style="color: #f59e0b;">CUSTOMS</span></span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- EYEBROW + HEADLINE -->
+        <tr>
+          <td style="padding-bottom: 32px;">
+            <p style="margin: 0 0 10px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">— BESTELLBESTÄTIGUNG</p>
+            <h1 style="margin: 0; font-family: 'Oswald', Impact, sans-serif; font-size: 32px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #ffffff; line-height: 1.15;">VIELEN DANK FÜR<br><span style="color: #f59e0b;">DEINE BESTELLUNG</span></h1>
+          </td>
+        </tr>
+
+        <!-- INTRO TEXT -->
+        <tr>
+          <td style="padding-bottom: 32px;">
+            <p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; color: #a1a1aa; line-height: 1.6;">Hallo ${customerName},<br><br>wir haben deine Bestellung erhalten und bearbeiten sie bereits.</p>
+          </td>
+        </tr>
+
+        <!-- ORDER DETAILS CARD -->
+        <tr>
+          <td style="padding-bottom: 32px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="width: 4px; background-color: #f59e0b;">&nbsp;</td>
+                <td style="background-color: #18181b; padding: 24px 24px 24px 20px;">
+                  <p style="margin: 0 0 6px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">BESTELLDETAILS</p>
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 14px;">
+                    <tr>
+                      <td style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a; padding-bottom: 8px;">BESTELLNUMMER</td>
+                      <td align="right" style="font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; padding-bottom: 8px;">#${orderData.orderId}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a;">GESAMTBETRAG</td>
+                      <td align="right" style="font-family: 'Oswald', Impact, sans-serif; font-size: 18px; font-weight: 700; color: #f59e0b;">CHF ${orderData.totalPrice.toFixed(2)}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ITEMS -->
+        ${
+          itemsHtml
+            ? `
+        <tr>
+          <td style="padding-bottom: 8px;">
+            <p style="margin: 0 0 12px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">STICKER</p>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">${itemsHtml}</table>
+          </td>
+        </tr>`
+            : ''
+        }
+
+        ${
+          partsHtml
+            ? `
+        <tr>
+          <td style="padding-bottom: 8px; padding-top: 16px;">
+            <p style="margin: 0 0 12px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">TEILE</p>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">${partsHtml}</table>
+          </td>
+        </tr>`
+            : ''
+        }
+
+        ${
+          powdercoatServicesHtml
+            ? `
+        <tr>
+          <td style="padding-bottom: 8px; padding-top: 16px;">
+            <p style="margin: 0 0 12px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">PULVERBESCHICHTUNG</p>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">${powdercoatServicesHtml}</table>
+          </td>
+        </tr>`
+            : ''
+        }
+
         ${
           hasPowdercoatServices
             ? `
-        <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
-          <h3 style="color: #856404; margin-top: 0;">📦 Wichtige Information zur Pulverbeschichtung</h3>
-          <p style="color: #856404; margin-bottom: 10px;"><strong>Bitte sende die zu beschichtenden Teile an folgende Adresse:</strong></p>
-          <div style="background-color: #fff; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #333;">
-            RevSticks<br>
-            MyPost24 PK619666<br>
-            MP Strättligen Markt<br>
-            3604 Thun
-          </div>
-          <p style="color: #856404; margin-top: 15px; margin-bottom: 15px;">
-            <strong>Wichtig:</strong> Wir können mit der Pulverbeschichtung erst beginnen, nachdem wir deine Teile erhalten haben. 
-            Bitte füge deine Bestellnummer <strong>${orderData.orderId}</strong> dem Paket bei.
-          </p>
-          <h4 style="color: #856404; margin-bottom: 10px;">📋 Zusätzliche wichtige Hinweise:</h4>
-          <ul style="color: #856404; margin-left: 20px; margin-bottom: 0;">
-            <li style="margin-bottom: 8px;">
-              <strong>WICHTIG:</strong> Bitte einen Zettel beilegen, auf dem folgende Informationen stehen:
-              <ol style="margin-left: 20px; margin-top: 5px;">
-                <li>Name und Adresse</li>
-                <li>E-Mail Adresse</li>
-                <li>Telefonnummer</li>
-                <li>Bestellnummer</li>
-              </ol>
-            </li>
-            <li style="margin-bottom: 8px;">
-              <strong>Vorbereitung der Teile:</strong> Alle Kunststoffteile müssen vor dem Versand entfernt werden. Die Teile müssen bereits getrennt/demontiert gesendet werden, da wir keine Demontage durchführen.
-            </li>
-            <li style="margin-bottom: 8px;">
-              <strong>Sauberkeit:</strong> Die Teile müssen sauber sein (Ansonsten können Kosten für das Putzen anfallen)
-            </li>
-            <li style="margin-bottom: 0;">
-              <strong>Farbkennzeichnung:</strong> Teile mit Malerband oder ähnlichem anschreiben, welche Farbe du bekommen sollst (Muss mit Bestellung übereinstimmen)
-            </li>
-          </ul>
-        </div>
-        `
+        <!-- POWDERCOAT WARNING CARD -->
+        <tr>
+          <td style="padding-top: 32px; padding-bottom: 8px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="width: 4px; background-color: #f59e0b;">&nbsp;</td>
+                <td style="background-color: #18181b; padding: 24px 24px 24px 20px;">
+                  <p style="margin: 0 0 6px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">WICHTIGE INFORMATION ZUR PULVERBESCHICHTUNG</p>
+                  <p style="margin: 14px 0 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff;">Bitte sende die zu beschichtenden Teile an folgende Adresse:</p>
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 10px 0 18px 0;">
+                    <tr>
+                      <td style="background-color: #27272a; padding: 14px 16px; font-family: 'DM Sans', monospace, Arial, sans-serif; font-size: 13px; color: #e4e4e7; line-height: 1.8;">
+                        Crestline Customs<br>
+                        MyPost24 PK619666<br>
+                        MP Strättligen Markt<br>
+                        3604 Thun
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin: 0 0 18px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;">Wir können mit der Pulverbeschichtung erst beginnen, nachdem wir deine Teile erhalten haben. Bitte füge deine Bestellnummer <span style="color: #f59e0b; font-weight: 600;">#${orderData.orderId}</span> dem Paket bei.</p>
+                  <p style="margin: 0 0 10px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #fbbf24;">ZUSÄTZLICHE HINWEISE</p>
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; <strong style="color: #ffffff;">Zettel beilegen</strong> mit Name, Adresse, E-Mail, Telefonnummer & Bestellnummer</td></tr>
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; <strong style="color: #ffffff;">Vorbereitung:</strong> Alle Kunststoffteile müssen entfernt, Teile bereits demontiert werden</td></tr>
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; <strong style="color: #ffffff;">Sauberkeit:</strong> Teile müssen sauber sein (sonst Reinigungskosten)</td></tr>
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; <strong style="color: #ffffff;">Farbkennzeichnung:</strong> Gewünschte Farbe mit Malerband beschriften (muss mit Bestellung übereinstimmen)</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`
             : ''
         }
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
-          <p>Du erhältst eine weitere E-Mail, sobald deine Bestellung versendet wurde.</p>
-          <p>Bei Fragen stehen wir dir gerne zur Verfügung.</p>
 
-          <p>Vielen Dank,<br>
-          <strong>Dein Revsticks Team</strong></p>
-        </div>
-      </div>
-    `;
+        <!-- DIVIDER -->
+        <tr><td style="height: 1px; background-color: #27272a; padding: 0; margin: 32px 0;">&nbsp;</td></tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding-top: 32px;">
+            <p style="margin: 0 0 8px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;">Du erhältst eine weitere E-Mail, sobald deine Bestellung versendet wurde.</p>
+            <p style="margin: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;">Bei Fragen stehen wir dir gerne zur Verfügung.</p>
+            <p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #52525b;">Vielen Dank,<br><span style="font-family: 'Oswald', Impact, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #71717a;">DEIN CRESTLINE CUSTOMS TEAM</span></p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>`;
 
     const stickerItemsText =
       orderData.orderItems.length > 0
@@ -611,7 +720,7 @@ Dein Revsticks Team
       .map((item) => {
         const dimensions =
           item.width && item.height ? `(${item.width}x${item.height}cm)` : '';
-        const type = item.vinyl ? '- Vinyl' : item.printed ? '- Bedruckt' : '';
+        const type = item.vinyl ? '— Vinyl' : item.printed ? '— Bedruckt' : '';
         const name =
           item.stickerName || (item.stickerId ? 'Sticker' : 'Custom Sticker');
         const customizations = this.formatCustomizationOptions(
@@ -624,12 +733,20 @@ Dein Revsticks Team
         );
 
         return `
-          <li style="margin-bottom: 15px; display: flex; align-items: center;">
-            ${imageHtml}
-            <div>
-              <strong>${item.quantity}x ${name}</strong> ${dimensions} ${type}${customizations}
-            </div>
-          </li>`;
+          <tr>
+            <td style="padding: 14px 0; border-bottom: 1px solid #27272a; vertical-align: middle;">
+              <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                <tr>
+                  <td style="width: 70px; vertical-align: middle; padding-right: 14px;">${imageHtml}</td>
+                  <td style="vertical-align: middle;">
+                    <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff;">${item.quantity}x ${name}</span>
+                    ${dimensions || type ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a;">${dimensions} ${type}</span>` : ''}
+                    ${customizations ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #a1a1aa;">${customizations}</span>` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
       })
       .join('');
 
@@ -647,50 +764,158 @@ Dein Revsticks Team
           );
 
           return `
-            <li style="margin-bottom: 15px; display: flex; align-items: center;">
-              ${imageHtml}
-              <div>
-                <strong>${item.quantity}x ${partName}</strong>${customizations}
-              </div>
-            </li>`;
+          <tr>
+            <td style="padding: 14px 0; border-bottom: 1px solid #27272a; vertical-align: middle;">
+              <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                <tr>
+                  <td style="width: 70px; vertical-align: middle; padding-right: 14px;">${imageHtml}</td>
+                  <td style="vertical-align: middle;">
+                    <span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #ffffff;">${item.quantity}x ${partName}</span>
+                    ${customizations ? `<br><span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #a1a1aa;">${customizations}</span>` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
         })
         .join('') || '';
 
-    const subject = `Deine Bestellung wurde versendet - Bestellung #${orderData.orderId}`;
+    const subject = `Deine Bestellung ist unterwegs — #${orderData.orderId}`;
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #7e22ce; border-bottom: 2px solid #7e22ce; padding-bottom: 10px;">Deine Bestellung ist unterwegs!</h2>
-        <p>Hallo ${customerName},</p>
-        <p>gute Neuigkeiten! Deine Bestellung wurde soeben versendet und ist auf dem Weg zu dir.</p>
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; background-color: #09090b;">
 
-        <div style="background-color: #faf5ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #7e22ce;">
-          <h3 style="color: #7e22ce; margin-top: 0;">📦 Versanddetails:</h3>
-          <p><strong>Bestellnummer:</strong> ${orderData.orderId}</p>
-          <p><strong>Status:</strong> <span style="color: #7e22ce; font-weight: bold;">Versendet</span></p>
-          <p><strong>Gesamtbetrag:</strong> CHF ${orderData.totalPrice.toFixed(2)}</p>
-        </div>
-        
-        <h3 style="color: #333;">Versendete Artikel:</h3>
-        ${itemsHtml ? `<h4 style="color: #555; margin-bottom: 10px;">Sticker:</h4><ul style="list-style: none; padding: 0;">${itemsHtml}</ul>` : ''}
-        ${partsHtml ? `<h4 style="color: #555; margin-bottom: 10px;">Teile:</h4><ul style="list-style: none; padding: 0;">${partsHtml}</ul>` : ''}
-        
-        <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
-          <h4 style="color: #333; margin-top: 0;">📋 Was passiert als nächstes?</h4>
-          <p>• Dein Paket ist auf dem Weg zu deiner angegebenen Lieferadresse</p>
-          <p>• Du solltest deine Bestellung in den nächsten 1-5 Werktag(en) erhalten</p>
-          <p>• Falls du Fragen zum Versand hast, kontaktiere uns gerne</p>
-        </div>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
-          <p>Vielen Dank für dein Vertrauen in Revsticks!</p>
-          <p>Bei Fragen zum Versand oder deiner Bestellung stehen wir dir gerne zur Verfügung.</p>
-          
-          <p>Viele Grüße,<br>
-          <strong>Dein Revsticks Team</strong></p>
-        </div>
-      </div>
-    `;
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #09090b; min-height: 100%;">
+  <tr>
+    <td align="center" style="padding: 40px 16px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; width: 100%;">
+
+        <!-- HEADER / LOGO -->
+        <tr>
+          <td style="padding-bottom: 40px;">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="width: 4px; background-color: #f59e0b; padding: 0;">&nbsp;</td>
+                <td style="padding-left: 14px;">
+                  <span style="font-family: 'Oswald', Impact, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #ffffff;">CRESTLINE <span style="color: #f59e0b;">CUSTOMS</span></span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- EYEBROW + HEADLINE -->
+        <tr>
+          <td style="padding-bottom: 32px;">
+            <p style="margin: 0 0 10px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">— BESTELLUNG VERSENDET</p>
+            <h1 style="margin: 0; font-family: 'Oswald', Impact, sans-serif; font-size: 32px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #ffffff; line-height: 1.15;">DEINE BESTELLUNG<br><span style="color: #f59e0b;">IST UNTERWEGS</span></h1>
+          </td>
+        </tr>
+
+        <!-- INTRO TEXT -->
+        <tr>
+          <td style="padding-bottom: 32px;">
+            <p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; color: #a1a1aa; line-height: 1.6;">Hallo ${customerName},<br><br>gute Neuigkeiten! Deine Bestellung wurde soeben versendet und ist auf dem Weg zu dir.</p>
+          </td>
+        </tr>
+
+        <!-- SHIPPING DETAILS CARD -->
+        <tr>
+          <td style="padding-bottom: 32px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="width: 4px; background-color: #f59e0b;">&nbsp;</td>
+                <td style="background-color: #18181b; padding: 24px 24px 24px 20px;">
+                  <p style="margin: 0 0 6px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">VERSANDDETAILS</p>
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 14px;">
+                    <tr>
+                      <td style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a; padding-bottom: 8px;">BESTELLNUMMER</td>
+                      <td align="right" style="font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; padding-bottom: 8px;">#${orderData.orderId}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a; padding-bottom: 8px;">STATUS</td>
+                      <td align="right" style="font-family: 'Oswald', Impact, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; color: #f59e0b; padding-bottom: 8px;">VERSENDET</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #71717a;">GESAMTBETRAG</td>
+                      <td align="right" style="font-family: 'Oswald', Impact, sans-serif; font-size: 18px; font-weight: 700; color: #f59e0b;">CHF ${orderData.totalPrice.toFixed(2)}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ITEMS -->
+        ${
+          itemsHtml
+            ? `
+        <tr>
+          <td style="padding-bottom: 8px;">
+            <p style="margin: 0 0 12px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">STICKER</p>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">${itemsHtml}</table>
+          </td>
+        </tr>`
+            : ''
+        }
+
+        ${
+          partsHtml
+            ? `
+        <tr>
+          <td style="padding-bottom: 8px; padding-top: 16px;">
+            <p style="margin: 0 0 12px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">TEILE</p>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">${partsHtml}</table>
+          </td>
+        </tr>`
+            : ''
+        }
+
+        <!-- NEXT STEPS CARD -->
+        <tr>
+          <td style="padding-top: 32px; padding-bottom: 8px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="width: 4px; background-color: #f59e0b;">&nbsp;</td>
+                <td style="background-color: #18181b; padding: 24px 24px 24px 20px;">
+                  <p style="margin: 0 0 14px 0; font-family: 'Oswald', Impact, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #fbbf24;">WAS PASSIERT ALS NÄCHSTES?</p>
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; Dein Paket ist auf dem Weg zu deiner angegebenen Lieferadresse</td></tr>
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; Du solltest deine Bestellung in den nächsten <strong style="color: #ffffff;">1–5 Werktagen</strong> erhalten</td></tr>
+                    <tr><td style="padding: 6px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;"><span style="color: #f59e0b; font-weight: 700;">&#9679;</span>&nbsp; Falls du Fragen zum Versand hast, kontaktiere uns gerne</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- DIVIDER -->
+        <tr><td style="height: 1px; background-color: #27272a; padding: 0; margin: 32px 0;">&nbsp;</td></tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding-top: 32px;">
+            <p style="margin: 0 0 8px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;">Vielen Dank für dein Vertrauen in Crestline Customs!</p>
+            <p style="margin: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #a1a1aa; line-height: 1.6;">Bei Fragen zum Versand oder deiner Bestellung stehen wir dir gerne zur Verfügung.</p>
+            <p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #52525b;">Viele Grüße,<br><span style="font-family: 'Oswald', Impact, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #71717a;">DEIN CRESTLINE CUSTOMS TEAM</span></p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>`;
 
     const stickerItemsText =
       orderData.orderItems.length > 0

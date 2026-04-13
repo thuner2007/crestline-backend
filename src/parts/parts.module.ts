@@ -6,11 +6,7 @@ import { PrismaService } from 'prisma/prisma.service';
 
 @Module({
   controllers: [PartsController],
-  providers: [
-    PartsService,
-    MinioService,
-    PrismaService,
-  ],
+  providers: [PartsService, MinioService, PrismaService],
   exports: [PartsService],
 })
 export class PartsModule {}

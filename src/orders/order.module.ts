@@ -12,12 +12,7 @@ import { UpsService } from './ups.service';
 import { PostService } from './post.service';
 
 @Module({
-  imports: [
-    DiscountsModule,
-    PartsModule,
-    MailModule,
-    NotificationModule,
-  ],
+  imports: [DiscountsModule, PartsModule, MailModule, NotificationModule],
   controllers: [StickerOrderController],
   providers: [
     StickerOrderService,

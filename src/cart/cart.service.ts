@@ -531,10 +531,7 @@ export class CartService {
   /**
    * Helper method to get the name of an item based on its type
    */
-  private getItemName(
-    item: any,
-    type: 'part' | 'sticker',
-  ): string {
+  private getItemName(item: any, type: 'part' | 'sticker'): string {
     // For parts and stickers, try to get English translation first, then fallback to any translation
     if (item.translations && item.translations.length > 0) {
       const enTranslation = item.translations.find(

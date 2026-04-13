@@ -31,8 +31,6 @@ Copy the [Env Example](./env.example) and make a .env file in root
 ## Applying seed:
 
 ```bash
-npm run seed:groups
-npm run seed:stickers
 npm run seed:parts
 npm run seed:users
 npm run seed:orders

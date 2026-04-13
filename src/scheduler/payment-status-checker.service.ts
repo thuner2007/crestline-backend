@@ -74,11 +74,6 @@ export class PaymentStatusCheckerService implements OnModuleInit {
                     },
                   },
                 },
-                powdercoatItems: {
-                  include: {
-                    powdercoatingService: true,
-                  },
-                },
               },
             });
 
@@ -125,17 +120,6 @@ export class PaymentStatusCheckerService implements OnModuleInit {
                         ? JSON.parse(item.customizationOptions)
                         : item.customizationOptions,
                   })),
-                  powdercoatServiceOrderItems: updatedOrder.powdercoatItems.map(
-                    (item) => ({
-                      quantity: item.quantity,
-                      powdercoatingServiceId: item.powdercoatingServiceId,
-                      powdercoatingServiceName: item.powdercoatingService?.name,
-                      customizationOptions:
-                        typeof item.customizationOptions === 'string'
-                          ? JSON.parse(item.customizationOptions)
-                          : item.customizationOptions,
-                    }),
-                  ),
                 });
               }
             } catch {
