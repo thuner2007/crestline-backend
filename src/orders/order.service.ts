@@ -176,7 +176,21 @@ export class StickerOrderService {
 
     for (const item of partOrderItems) {
       const part = await this.partsService.findOne(item.partId);
-      const itemPrice = part.price * item.quantity;
+      let baseItemPriceInCents = Math.round(part.price * 100);
+
+      // Apply customization price adjustments
+      if (item.customizationOptions && Array.isArray(item.customizationOptions)) {
+        for (const opt of item.customizationOptions as any[]) {
+          if (opt.priceAdjustment != null) {
+            baseItemPriceInCents += Math.round(opt.priceAdjustment * 100);
+          }
+          if (opt.selectedItemPriceAdjustment != null) {
+            baseItemPriceInCents += Math.round(opt.selectedItemPriceAdjustment * 100);
+          }
+        }
+      }
+
+      const itemPrice = (baseItemPriceInCents / 100) * item.quantity;
       partsPrice += itemPrice;
 
       // Separate parts with and without initialPrice for discount calculation
@@ -744,26 +758,55 @@ export class StickerOrderService {
 
           if (partOptions && partOptions.options) {
             customOptions = customOptions.map((option) => {
+              // Find the matching schema option by index (numeric) or by English title (string)
+              let schemaOption = null;
+              if (option.optionId !== undefined) {
+                const optionIdx = parseInt(option.optionId, 10);
+                if (!isNaN(optionIdx)) {
+                  schemaOption = partOptions.options[optionIdx];
+                } else {
+                  schemaOption = partOptions.options.find(
+                    (o) => o.translations?.en?.title === option.optionId,
+                  );
+                }
+              }
+
+              if (!schemaOption) return option;
+
+              const enriched: any = { ...option };
+
+              // Add option-level price adjustment
+              if (
+                schemaOption.priceAdjustment !== undefined &&
+                schemaOption.priceAdjustment !== null
+              ) {
+                enriched.priceAdjustment = schemaOption.priceAdjustment;
+              }
+
+              // For dropdown, find the selected item and its price adjustment + translations
               if (
                 option.type === 'dropdown' &&
                 option.value &&
-                option.optionId !== undefined
+                schemaOption.items
               ) {
-                const dropdownOption =
-                  partOptions.options[parseInt(option.optionId, 10)];
-                if (dropdownOption && dropdownOption.items) {
-                  const selectedItem = dropdownOption.items.find(
-                    (item) => item.id === option.value,
-                  );
-                  if (selectedItem && selectedItem.translations) {
-                    return {
-                      ...option,
-                      translations: selectedItem.translations,
-                    };
+                const selectedItem = schemaOption.items.find(
+                  (item) => item.id === option.value,
+                );
+                if (selectedItem) {
+                  if (selectedItem.translations) {
+                    enriched.translations = selectedItem.translations;
+                  }
+                  if (
+                    selectedItem.priceAdjustment !== undefined &&
+                    selectedItem.priceAdjustment !== null
+                  ) {
+                    enriched.selectedItemPriceAdjustment =
+                      selectedItem.priceAdjustment;
                   }
                 }
               }
-              return option;
+
+              return enriched;
             });
           }
         }
@@ -830,13 +873,72 @@ export class StickerOrderService {
           : item.customizationOptions,
     }));
 
-    order.partItems = order.partItems.map((item) => ({
-      ...item,
-      customizationOptions:
+    order.partItems = order.partItems.map((item) => {
+      let customOptions =
         typeof item.customizationOptions === 'string'
           ? JSON.parse(item.customizationOptions)
-          : item.customizationOptions,
-    }));
+          : item.customizationOptions || [];
+
+      if (item.part && customOptions.length > 0) {
+        const partOptions =
+          typeof item.part.customizationOptions === 'string'
+            ? JSON.parse(item.part.customizationOptions)
+            : item.part.customizationOptions;
+
+        if (partOptions && partOptions.options) {
+          customOptions = customOptions.map((option) => {
+            let schemaOption = null;
+            if (option.optionId !== undefined) {
+              const optionIdx = parseInt(option.optionId, 10);
+              if (!isNaN(optionIdx)) {
+                schemaOption = partOptions.options[optionIdx];
+              } else {
+                schemaOption = partOptions.options.find(
+                  (o) => o.translations?.en?.title === option.optionId,
+                );
+              }
+            }
+
+            if (!schemaOption) return option;
+
+            const enriched: any = { ...option };
+
+            if (
+              schemaOption.priceAdjustment !== undefined &&
+              schemaOption.priceAdjustment !== null
+            ) {
+              enriched.priceAdjustment = schemaOption.priceAdjustment;
+            }
+
+            if (
+              option.type === 'dropdown' &&
+              option.value &&
+              schemaOption.items
+            ) {
+              const selectedItem = schemaOption.items.find(
+                (i) => i.id === option.value,
+              );
+              if (selectedItem) {
+                if (selectedItem.translations) {
+                  enriched.translations = selectedItem.translations;
+                }
+                if (
+                  selectedItem.priceAdjustment !== undefined &&
+                  selectedItem.priceAdjustment !== null
+                ) {
+                  enriched.selectedItemPriceAdjustment =
+                    selectedItem.priceAdjustment;
+                }
+              }
+            }
+
+            return enriched;
+          });
+        }
+      }
+
+      return { ...item, customizationOptions: customOptions };
+    });
 
     return order;
   }
