@@ -67,9 +67,12 @@ async function main() {
     const dropdownItems = [];
     const dropdownOptions = ['Small', 'Medium', 'Large', 'Custom'];
 
+    const dropdownPriceAdjustments = [0, 2.50, 5.00];
+
     for (let j = 0; j < 3; j++) {
       dropdownItems.push({
         id: `option-${j + 1}`,
+        priceAdjustment: dropdownPriceAdjustments[j],
         translations: {
           en: {
             title: dropdownOptions[j],
@@ -287,6 +290,7 @@ async function main() {
             items: [
               {
                 id: 'material-steel',
+                priceAdjustment: 0,
                 translations: {
                   en: {
                     title: 'Steel',
@@ -308,43 +312,45 @@ async function main() {
               },
               {
                 id: 'material-aluminum',
+                priceAdjustment: 3.50,
                 translations: {
                   en: {
                     title: 'Aluminum',
-                    description: 'Lightweight aluminum construction',
+                    description: 'Lightweight aluminum construction (+CHF 3.50)',
                   },
                   de: {
                     title: 'Aluminium',
-                    description: 'Leichte Aluminiumkonstruktion',
+                    description: 'Leichte Aluminiumkonstruktion (+CHF 3.50)',
                   },
                   fr: {
                     title: 'Aluminium',
-                    description: 'Construction légère en aluminium',
+                    description: 'Construction légère en aluminium (+CHF 3.50)',
                   },
                   it: {
                     title: 'Alluminio',
-                    description: 'Costruzione leggera in alluminio',
+                    description: 'Costruzione leggera in alluminio (+CHF 3.50)',
                   },
                 },
               },
               {
                 id: 'material-titanium',
+                priceAdjustment: 9.99,
                 translations: {
                   en: {
                     title: 'Titanium',
-                    description: 'Premium titanium construction',
+                    description: 'Premium titanium construction (+CHF 9.99)',
                   },
                   de: {
                     title: 'Titan',
-                    description: 'Premium-Titankonstruktion',
+                    description: 'Premium-Titankonstruktion (+CHF 9.99)',
                   },
                   fr: {
                     title: 'Titane',
-                    description: 'Construction premium en titane',
+                    description: 'Construction premium en titane (+CHF 9.99)',
                   },
                   it: {
                     title: 'Titanio',
-                    description: 'Costruzione premium in titanio',
+                    description: 'Costruzione premium in titanio (+CHF 9.99)',
                   },
                 },
               },

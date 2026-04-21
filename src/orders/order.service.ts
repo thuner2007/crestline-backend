@@ -1449,14 +1449,27 @@ export class StickerOrderService {
 
           // Process each selected option
           for (const selectedOption of item.customizationOptions) {
-            // First check if there's a direct price adjustment provided
+            // Use direct price adjustments if provided by the client
+            let hasDirectAdjustment = false;
+
+            if (
+              selectedOption.priceAdjustment !== undefined &&
+              selectedOption.priceAdjustment !== null
+            ) {
+              adjustmentsInCents += Math.round(
+                selectedOption.priceAdjustment * 100,
+              );
+              hasDirectAdjustment = true;
+            }
+
             if (selectedOption.selectedItemPriceAdjustment !== undefined) {
-              // If a direct price adjustment is provided, use it
               adjustmentsInCents += Math.round(
                 selectedOption.selectedItemPriceAdjustment * 100,
               );
-              continue; // Skip the schema lookup process
+              hasDirectAdjustment = true;
             }
+
+            if (hasDirectAdjustment) continue; // Skip schema lookup when direct values are present
 
             // Proceed with existing schema-based lookup
             if (
@@ -1726,6 +1739,28 @@ export class StickerOrderService {
 
           // Process each selected option
           for (const selectedOption of customizationOptions) {
+            // Use direct price adjustments if provided by the client
+            let hasDirectAdjustment = false;
+
+            if (
+              selectedOption.priceAdjustment !== undefined &&
+              selectedOption.priceAdjustment !== null
+            ) {
+              adjustmentsInCents += Math.round(
+                selectedOption.priceAdjustment * 100,
+              );
+              hasDirectAdjustment = true;
+            }
+
+            if (selectedOption.selectedItemPriceAdjustment !== undefined) {
+              adjustmentsInCents += Math.round(
+                selectedOption.selectedItemPriceAdjustment * 100,
+              );
+              hasDirectAdjustment = true;
+            }
+
+            if (hasDirectAdjustment) continue; // Skip schema lookup when direct values are present
+
             if (
               !selectedOption.optionId ||
               selectedOption.optionId === undefined
