@@ -177,6 +177,31 @@ model sticker {
   @@index([active])
 }
 
+model part_section {
+  id          String   @id @default(uuid())
+  sortingRank Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  parts        part[]
+  translations part_section_translation[]
+
+  @@index([active])
+}
+
+model part_section_translation {
+  id            String  @id @default(uuid())
+  partSectionId String
+  language      String
+  title         String  @db.VarChar
+  description   String? @db.VarChar
+
+  partSection part_section @relation(fields: [partSectionId], references: [id], onDelete: Cascade)
+
+  @@unique([partSectionId, language])
+}
+
 model part {
   id           String   @id @default(uuid()) @map("id")
   price        Decimal  @db.Decimal(10, 2)
@@ -196,7 +221,8 @@ model part {
   shippingDate  DateTime?           @db.Timestamptz(6)
   type          String?             @db.VarChar
 
-  groups part_group[]
+  groups   part_group[]
+  sections part_section[]
 
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)

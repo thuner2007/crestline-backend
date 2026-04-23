@@ -31,9 +31,16 @@ Copy the [Env Example](./env.example) and make a .env file in root
 ## Applying seed:
 
 ```bash
+npm run seed:part-sections
 npm run seed:parts
 npm run seed:users
 npm run seed:orders
+```
+
+Or all at once:
+
+```bash
+npm run db:reset-and-seed
 ```
 
 ## For database schema changes:
@@ -48,7 +55,7 @@ When deployed, entrypoint.sh will run migrate deploy to apply your changes
 ## Reset DB:
 
 ```bash
-npx prisma migrate reset
+npm run db:reset
 ```
 
 ## Import prod db into dev db:

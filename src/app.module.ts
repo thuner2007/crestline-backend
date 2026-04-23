@@ -24,6 +24,7 @@ import { MailModule } from './mail/mail.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { NotificationModule } from './notifications/notification.module';
 import { FilamentTypesModule } from './filamentTypes/filamentTypes.module';
+import { PartSectionsModule } from './partSections/partSections.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { FilamentTypesModule } from './filamentTypes/filamentTypes.module';
     SchedulerModule,
     NotificationModule,
     FilamentTypesModule,
+    PartSectionsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

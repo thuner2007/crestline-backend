@@ -21,9 +21,12 @@
     "typeorm": "ts-node ./node_modules/typeorm/cli",
     "migration:generate": "npm run typeorm migration:generate -- -d src/typeorm.config.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/typeorm.config.ts",
+    "db:reset": "node_modules/.bin/prisma migrate reset --force --skip-seed",
+    "db:reset-and-seed": "npm run db:reset && npm run seed:part-sections && npm run seed:parts && npm run seed:users && npm run seed:orders",
     "seed:parts": "ts-node prisma/seeds/parts.seed.ts",
     "seed:users": "ts-node prisma/seeds/user.seed.ts",
     "seed:orders": "ts-node prisma/seeds/order.seed.ts",
+    "seed:part-sections": "ts-node prisma/seeds/partSections.seed.ts",
     "compile:seeds": "tsc prisma/seeds/*.ts --outDir dist/seeds --esModuleInterop true --target es2020 --module commonjs"
   },
   "dependencies": {

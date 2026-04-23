@@ -91,6 +91,7 @@ export class PartsService {
         },
         include: {
           groups: true,
+          sections: { include: { translations: true } },
           translations: true,
           links: { include: { translations: true } },
           filamentTypes: {
@@ -120,6 +121,7 @@ export class PartsService {
       where: { id },
       include: {
         groups: true,
+        sections: { include: { translations: true } },
         translations: true,
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
@@ -359,6 +361,7 @@ export class PartsService {
     limit?: number;
     skip?: number;
     groupIds?: string[];
+    sectionId?: string;
     random?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -368,6 +371,7 @@ export class PartsService {
       limit = 20,
       skip = 0,
       groupIds,
+      sectionId,
       random = false,
       sortBy = 'sortingRank',
       sortOrder = 'asc',
@@ -386,6 +390,11 @@ export class PartsService {
       where.groups = { some: { id: { in: groupIds } } };
     }
 
+    // Apply section filter if sectionId is provided
+    if (sectionId) {
+      where.sections = { some: { id: sectionId } };
+    }
+
     // Get total count for pagination
     const total = await this.prisma.part.count({ where });
 
@@ -395,6 +404,7 @@ export class PartsService {
       include: {
         translations: true,
         groups: { include: { translations: true } },
+        sections: { include: { translations: true } },
         links: { include: { translations: true } },
         accessories: { include: { translations: true } },
         filamentTypes: {
@@ -484,6 +494,7 @@ export class PartsService {
     limit?: number;
     skip?: number;
     groupIds?: string[];
+    sectionId?: string;
     random?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -493,6 +504,7 @@ export class PartsService {
       limit = 20,
       skip = 0,
       groupIds,
+      sectionId,
       random = false,
       sortBy = 'sortingRank',
       sortOrder = 'asc',
@@ -509,6 +521,11 @@ export class PartsService {
     // Apply group filter if groupIds are provided
     if (groupIds && groupIds.length > 0) {
       where.groups = { some: { id: { in: groupIds } } };
+    }
+
+    // Apply section filter if sectionId is provided
+    if (sectionId) {
+      where.sections = { some: { id: sectionId } };
     }
 
     // Get total count for pagination

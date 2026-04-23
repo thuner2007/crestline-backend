@@ -12,6 +12,115 @@ function getRandomInt(min, max) {
 async function main() {
   console.log('Starting parts seeding...');
 
+  // Load existing part groups so parts can be connected to them
+  const partGroups = await prisma.part_group.findMany({
+    include: { translations: true },
+  });
+
+  // Build a lookup map: English title (lowercase) → group id
+  const groupByName = new Map<string, string>();
+  for (const pg of partGroups) {
+    const enTitle =
+      pg.translations.find((t) => t.language === 'en')?.title?.toLowerCase() ??
+      '';
+    if (enTitle) groupByName.set(enTitle, pg.id);
+  }
+
+  // Ensure part sections exist (create them if missing so parts seed is self-contained)
+  const defaultSections = [
+    {
+      sortingRank: 1,
+      translations: {
+        en: { title: 'Plate Holders', description: 'License plate holders and mounts' },
+        de: { title: 'Nummernschildhalter', description: 'Nummernschildhalter und Halterungen' },
+        fr: { title: 'Porte-plaques', description: "Porte-plaques d'immatriculation et supports" },
+        it: { title: 'Portatarghette', description: 'Portatarghette e supporti' },
+      },
+    },
+    {
+      sortingRank: 2,
+      translations: {
+        en: { title: 'Stickers', description: 'Decals, stickers and graphics' },
+        de: { title: 'Aufkleber', description: 'Aufkleber, Dekale und Grafiken' },
+        fr: { title: 'Autocollants', description: 'Autocollants, décalcomanies et graphiques' },
+        it: { title: 'Adesivi', description: 'Adesivi, decalcomanie e grafiche' },
+      },
+    },
+    {
+      sortingRank: 3,
+      translations: {
+        en: { title: 'Hoodies', description: 'Hoodies and sweatshirts' },
+        de: { title: 'Hoodies', description: 'Hoodies und Sweatshirts' },
+        fr: { title: 'Sweats à capuche', description: 'Sweats à capuche et sweat-shirts' },
+        it: { title: 'Felpe con cappuccio', description: 'Felpe con cappuccio e felpe' },
+      },
+    },
+    {
+      sortingRank: 4,
+      translations: {
+        en: { title: 'Accessories', description: 'General accessories and add-ons' },
+        de: { title: 'Zubehör', description: 'Allgemeines Zubehör und Erweiterungen' },
+        fr: { title: 'Accessoires', description: 'Accessoires généraux et ajouts' },
+        it: { title: 'Accessori', description: 'Accessori generali e componenti aggiuntivi' },
+      },
+    },
+  ];
+
+  for (const s of defaultSections) {
+    const exists = await prisma.part_section_translation.findFirst({
+      where: { language: 'en', title: s.translations.en.title },
+    });
+    if (!exists) {
+      await prisma.part_section.create({
+        data: {
+          sortingRank: s.sortingRank,
+          active: true,
+          translations: {
+            create: Object.entries(s.translations).map(([lang, tr]) => ({
+              language: lang,
+              title: tr.title,
+              description: tr.description ?? null,
+            })),
+          },
+        },
+      });
+      console.log(`Created section: ${s.translations.en.title}`);
+    }
+  }
+
+  // Load part sections (now guaranteed to exist)
+  const partSections = await prisma.part_section.findMany({
+    include: { translations: true },
+    orderBy: { sortingRank: 'asc' },
+  });
+
+  // Resolve a group id from a part title keyword
+  function resolveGroupId(partTitle: string): string | null {
+    const t = partTitle.toLowerCase();
+    if (t.includes('frame')) return groupByName.get('frames') ?? null;
+    if (t.includes('wheel') || t.includes('spokes'))
+      return groupByName.get('wheels') ?? null;
+    if (
+      t.includes('bolt') ||
+      t.includes('bearing') ||
+      t.includes('screw') ||
+      t.includes('axle') ||
+      t.includes('mount') ||
+      t.includes('pivot') ||
+      t.includes('hardware')
+    )
+      return groupByName.get('hardware') ?? null;
+    if (t.includes('grip') || t.includes('riser') || t.includes('tool'))
+      return groupByName.get('accessories') ?? null;
+    return groupByName.get('general parts') ?? null;
+  }
+
+  // Distribute parts across sections round-robin (so every section has parts)
+  function resolveSectionId(index: number): string | null {
+    if (partSections.length === 0) return null;
+    return partSections[index % partSections.length].id;
+  }
+
   // Generate 30 parts with randomized properties
   const partsData = [];
   const titles = [
@@ -140,6 +249,9 @@ async function main() {
       },
     });
 
+    const groupId = resolveGroupId(title);
+    const sectionId = resolveSectionId(i - 1);
+
     const part = {
       price: parseFloat((Math.random() * 50 + 5).toFixed(2)),
       quantity: getRandomInt(10, 200),
@@ -149,6 +261,8 @@ async function main() {
       images: [`part-${i}.jpg`, `part-${i}-alt.jpg`],
       sortingRank: i,
       active: Math.random() > 0.1, // 90% of parts are active
+      groupId,
+      sectionId,
       translations: [
         {
           language: 'en',
@@ -179,15 +293,21 @@ async function main() {
   // Create all parts
   for (let i = 0; i < partsData.length; i++) {
     const data = partsData[i];
-    const { translations, ...partInfo } = data;
+    const { translations, groupId, sectionId, ...partInfo } = data as any;
 
     try {
       // Prepare the part data
-      const createData = {
+      const createData: any = {
         ...partInfo,
         translations: {
           create: translations,
         },
+        ...(groupId && {
+          groups: { connect: [{ id: groupId }] },
+        }),
+        ...(sectionId && {
+          sections: { connect: [{ id: sectionId }] },
+        }),
       };
 
       // Create the part
@@ -195,10 +315,15 @@ async function main() {
         data: createData,
         include: {
           translations: true,
+          groups: true,
         },
       });
 
-      console.log(`Created part ${i + 1}/30: ${part.id}`);
+      console.log(
+        `Created part ${i + 1}/30: ${part.id} → group: ${
+          (part as any).groups?.[0]?.id ?? 'none'
+        }`,
+      );
 
       // Create option stocks for the dropdown items (dropdown is at index 1)
       const dropdownOptionId = '1';
@@ -377,6 +502,9 @@ async function main() {
         ],
       };
 
+      const customGroupId = groupByName.get('custom parts') ?? null;
+      const demoSectionId = partSections[0]?.id ?? null;
+
       // Create the demo part
       const demoPart = await prisma.part.create({
         data: {
@@ -391,6 +519,12 @@ async function main() {
           ],
           sortingRank: 0, // Put it at the top
           active: true,
+          ...(customGroupId && {
+            groups: { connect: [{ id: customGroupId }] },
+          }),
+          ...(demoSectionId && {
+            sections: { connect: [{ id: demoSectionId }] },
+          }),
           translations: {
             create: [
               {
@@ -420,6 +554,7 @@ async function main() {
         },
         include: {
           translations: true,
+          groups: true,
         },
       });
 
